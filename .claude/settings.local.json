@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(dataviz)",
+      "Skill(dataviz:*)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\eleme\\\\Desktop\\\\LauchOS\\\\src\\\\modules\\\\PDFExport\")",
+      "Bash(mkdir -p \"c:/Users/eleme/Desktop/LauchOS/src/modules/RiskScorer\")",
+      "Bash(node_modules/.bin/tsc.cmd --noEmit -p tsconfig.app.json)",
+      "Bash(./node_modules/.bin/tsc -b --pretty)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\eleme\\\\Desktop\\\\LauchOS\\\\src\\\\modules\\\\KPITracker\")",
+      "Bash(npx tsc *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\eleme\\\\Desktop\\\\LauchOS\\\\src\\\\modules\\\\BudgetAllocator\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(chromium-cli --help)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(mkdir -p 'C:\\\\Users\\\\eleme\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-eleme-Desktop-LauchOS\\\\a1ac5bd4-5953-480e-a964-63186db0daab\\\\scratchpad\\\\playwright-check')",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx playwright *)",
+      "Bash(mkdir -p screenshots)",
+      "Bash(node check.js)",
+      "Bash(node check3.js)",
+      "Bash(node check4.js)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\eleme\\Desktop\\LauchOS\\src\\modules",
+      "C:\\Users\\eleme\\Desktop\\LauchOS\\src\\modules"
+    ]
+  }
+}
