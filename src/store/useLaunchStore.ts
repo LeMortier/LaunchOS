@@ -21,6 +21,7 @@ import {
   type ChannelFunnelConfig,
   type GTMTask,
   type KPIWeeklyEntry,
+  type LaunchState,
   type ReportMeta,
   type RiskCriterion,
 } from './types';
@@ -50,6 +51,11 @@ interface LaunchStore {
 
   reportMeta: ReportMeta;
   setReportMeta: (meta: ReportMeta) => void;
+
+  // Remplace TOUTES les données des 6 modules d'un coup (utilisé par le bouton "Charger le scénario
+  // de démo" de la Sidebar), et remet tout à zéro (utilisé par le bouton "Réinitialiser" à côté).
+  loadLaunchState: (data: LaunchState) => void;
+  resetLaunchState: () => void;
 }
 
 // Les seuls champs qu'on sauvegarde réellement dans le localStorage : uniquement les données, jamais
@@ -151,6 +157,19 @@ export const useLaunchStore = create<LaunchStore>()(
 
       reportMeta: defaultReportMeta,
       setReportMeta: (reportMeta) => set({ reportMeta }),
+
+      // Un seul "set" pour les 6 modules à la fois : un seul re-rendu, une seule écriture dans le
+      // localStorage, plutôt que 6 appels séparés.
+      loadLaunchState: (data) => set(data),
+      resetLaunchState: () =>
+        set({
+          channelBudgets: defaultChannelBudgets,
+          gtmTasks: [],
+          kpiEntries: [],
+          riskCriteria: [],
+          funnelConfigs: defaultFunnelConfigs,
+          reportMeta: defaultReportMeta,
+        }),
     }),
     {
       // Le nom de la clé utilisée dans le localStorage du navigateur.
