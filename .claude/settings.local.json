@@ -24,7 +24,9 @@
       "Bash(mkdir -p screenshots)",
       "Bash(node check.js)",
       "Bash(node check3.js)",
-      "Bash(node check4.js)"
+      "Bash(node check4.js)",
+      "Bash(node -e \"const p=require\\('./node_modules/html2canvas/package.json'\\); console.log\\(p.types||p.typings, p.main, p.module\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/html2canvas/package.json'\\); console.log\\(JSON.stringify\\(p.types||p.typings||p.exports\\)\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\eleme\\Desktop\\LauchOS\\src\\modules",

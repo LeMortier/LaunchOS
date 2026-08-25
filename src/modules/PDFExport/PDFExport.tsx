@@ -1,18 +1,24 @@
 // Module 6 : PDF Export — le rapport consolidé qui résume tout ce qui a été fait dans les 5 autres modules.
-// Ce fichier est une "coquille" (shell) : le formulaire et le résumé chiffré sont branchés en vrai sur le
-// store partagé, mais la génération réelle du fichier PDF reste un TODO pour une prochaine version.
-import type { ChangeEvent } from 'react';
+// Le formulaire et le résumé chiffré écrivent/lisent le store partagé comme les autres modules. Le
+// bouton "Générer le PDF" appelle generateReport.ts (jsPDF + html2canvas) pour assembler un vrai
+// fichier PDF téléchargeable à partir de ces mêmes données.
+import { useRef, useState, type ChangeEvent } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import type { ReportMeta } from '../../store/types';
+import { BudgetDonutChart } from '../BudgetAllocator/BudgetDonutChart';
+import { KpiMetricsCharts } from '../KPITracker/KpiMetricsCharts';
+import { SankeyDiagram } from '../SankeyFunnel/SankeyDiagram';
+import { computeFunnelRows } from '../SankeyFunnel/funnelMath';
+import { generateLaunchReportPdf } from './generateReport';
 
 export default function PDFExport() {
   // Les infos d'en-tête du rapport (titre, sous-titre, préparé par) + l'action pour les modifier.
   const reportMeta = useLaunchStore((state) => state.reportMeta);
   const setReportMeta = useLaunchStore((state) => state.setReportMeta);
 
-  // On lit aussi les données des 5 autres modules, en lecture seule, juste pour prouver qu'on peut
-  // agréger tout le monde dans un seul résumé (c'est le rôle du rapport consolidé).
+  // On lit aussi les données des 5 autres modules : à la fois pour le résumé chiffré affiché ici,
+  // et pour les donner telles quelles à generateReport.ts au moment de fabriquer le PDF.
   const channelBudgets = useLaunchStore((state) => state.channelBudgets);
   const gtmTasks = useLaunchStore((state) => state.gtmTasks);
   const kpiEntries = useLaunchStore((state) => state.kpiEntries);
@@ -23,6 +29,18 @@ export default function PDFExport() {
   const totalBudget = channelBudgets.reduce((sum, budget) => sum + budget.amount, 0);
   // Combien de canaux ont vraiment des hypothèses de conversion saisies (pas juste la valeur par défaut à 0).
   const configuredFunnelChannels = funnelConfigs.filter((config) => config.costPerClick > 0).length;
+  // Le même calcul de funnel que le module Sankey Funnel (budget -> clics -> leads -> clients -> revenu),
+  // réutilisé ici tel quel via funnelMath.ts pour remplir le tableau du rapport avec les mêmes chiffres.
+  const funnelRows = computeFunnelRows(channelBudgets, funnelConfigs);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Références vers les 3 graphiques rendus hors écran tout en bas de ce fichier : c'est ce que
+  // html2canvas va "photographier" pour les incruster comme images dans le PDF.
+  const budgetDonutRef = useRef<HTMLDivElement>(null);
+  const kpiChartsRef = useRef<HTMLDivElement>(null);
+  const sankeyDiagramRef = useRef<HTMLDivElement>(null);
 
   // Met à jour un seul champ du formulaire sans perdre les autres : on repart de reportMeta actuel
   // et on écrase juste le champ concerné avant de renvoyer le tout au store.
@@ -37,6 +55,36 @@ export default function PDFExport() {
     subtitle: row.subtitle ?? '',
     preparedBy: row.preparedBy ?? '',
   });
+
+  // Appelée au clic sur "Générer le PDF" : rassemble les données des 5 autres modules et les 3
+  // graphiques hors écran, puis laisse generateReport.ts assembler le fichier et le télécharger.
+  const handleGeneratePdf = async () => {
+    setIsGenerating(true);
+    setGenerationError(null);
+    try {
+      await generateLaunchReportPdf({
+        reportMeta,
+        channelBudgets,
+        gtmTasks,
+        kpiEntries,
+        riskCriteria,
+        funnelRows,
+        captureElements: {
+          budgetDonut: budgetDonutRef.current,
+          kpiCharts: kpiChartsRef.current,
+          sankeyDiagram: sankeyDiagramRef.current,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      // On affiche le message d'erreur réel (pas un texte générique) : ça évite d'avoir à rouvrir
+      // la console à chaque fois pour comprendre pourquoi la génération a échoué.
+      const message = error instanceof Error ? error.message : String(error);
+      setGenerationError(`Échec de la génération du PDF : ${message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,23 +157,41 @@ export default function PDFExport() {
         </div>
       </section>
 
-      {/* Bouton de génération du PDF, désactivé pour l'instant. */}
+      {/* Bouton de génération du PDF : appelle generateLaunchReportPdf, qui construit le fichier et
+          déclenche son téléchargement. Désactivé pendant la génération pour éviter un double-clic. */}
       <section className="rounded-lg border border-neutral-800 p-4 flex flex-col gap-2">
-        {/* TODO : brancher jsPDF + html2canvas (déjà installées) ici. L'idée : html2canvas prend une
-            "photo" (capture du DOM en image) de chaque module un par un, puis jsPDF assemble ces images
-            dans un vrai fichier PDF téléchargeable. Tant que ce n'est pas fait, le bouton reste désactivé. */}
         <button
           type="button"
-          disabled
-          className="self-start rounded-md border border-emerald-500/20 bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-400/50 cursor-not-allowed"
+          onClick={handleGeneratePdf}
+          disabled={isGenerating}
+          className="self-start rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-emerald-400 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Générer le PDF
+          {isGenerating ? 'Génération en cours…' : 'Générer le PDF'}
         </button>
         <p className="text-xs text-neutral-500">
-          La génération réelle du rapport (capture de chaque module + assemblage en PDF) arrive dans une
-          prochaine version.
+          Le PDF reprend la page de couverture ci-dessus, puis une section par module (GTM Canvas,
+          Budget Allocator, KPI Tracker, Risk Scorer, Sankey Funnel), avec leurs graphiques et tableaux.
+          Un module sans donnée affiche simplement "Aucune donnée renseignée" plutôt qu'une page blanche.
         </p>
+        {generationError && <p className="text-xs text-red-400">{generationError}</p>}
       </section>
+
+      {/* Copies hors écran des 3 graphiques (donut budget, courbes KPI, diagramme Sankey), avec les
+          mêmes composants que les modules utilisent à l'écran. Elles ne sont jamais visibles pour
+          l'utilisateur (position fixe très à gauche de l'écran) : elles servent uniquement de "photo"
+          pour html2canvas au moment de générer le PDF, puisqu'un graphique SVG ne peut pas se
+          transformer directement en instructions de dessin PDF. */}
+      <div aria-hidden style={{ position: 'fixed', top: 0, left: '-10000px', width: 820 }}>
+        <div ref={budgetDonutRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
+          <BudgetDonutChart channelBudgets={channelBudgets} height={260} />
+        </div>
+        <div ref={kpiChartsRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
+          <KpiMetricsCharts kpiEntries={kpiEntries} height={220} />
+        </div>
+        <div ref={sankeyDiagramRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
+          <SankeyDiagram rows={funnelRows} />
+        </div>
+      </div>
     </div>
   );
 }

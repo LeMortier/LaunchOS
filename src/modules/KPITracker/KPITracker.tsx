@@ -1,19 +1,10 @@
 // Module 3 — KPI Tracker : ça compare, semaine après semaine, ce qu'on visait (objectif) à ce qu'on
 // a vraiment obtenu (réel), pour suivre la progression du lancement sous forme de courbes.
 import { useMemo, useState } from 'react';
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import type { KPIWeeklyEntry } from '../../store/types';
+import { KpiLineChart } from './KpiLineChart';
 
 // Fabrique un identifiant unique pour une nouvelle ligne. Utilisé par le formulaire manuel,
 // et par l'import CSV quand la colonne "id" du fichier est vide ou absente.
@@ -143,36 +134,7 @@ export default function KPITracker() {
           </p>
         ) : (
           <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#2c2c2a" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="week" stroke="#898781" tick={{ fill: '#898781', fontSize: 12 }} />
-                <YAxis stroke="#898781" tick={{ fill: '#898781', fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#171717',
-                    border: '1px solid #404040',
-                    borderRadius: 8,
-                    color: '#fff',
-                  }}
-                  labelStyle={{ color: '#a3a3a3' }}
-                />
-                <Legend wrapperStyle={{ fontSize: 12, color: '#a3a3a3' }} />
-                {/* Réel en trait plein emerald (couleur d'accent du projet). */}
-                <Line type="monotone" dataKey="actual" name="Réel" stroke="#34d399" strokeWidth={2} dot={{ r: 4 }} />
-                {/* Objectif en trait pointillé : le pointillé sert aussi à distinguer les deux courbes
-                    sans dépendre uniquement de la couleur (utile si daltonien). */}
-                <Line
-                  type="monotone"
-                  dataKey="target"
-                  name="Objectif"
-                  stroke="#fbbf24"
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <KpiLineChart data={chartData} height="100%" />
           </div>
         )}
       </div>

@@ -4,10 +4,10 @@
 // Ce module lit et écrit directement dans le store partagé (Zustand, notre "mémoire commune"
 // entre tous les modules) : dès qu'on bouge un slider, le budget est à jour partout ailleurs
 // dans l'app, par exemple pour le Sankey Funnel qui part de ces mêmes budgets.
-import { CHANNELS, CHANNEL_COLORS, CHANNEL_LABELS, type Channel, type ChannelBudget } from '../../store/types';
+import { CHANNELS, CHANNEL_LABELS, type Channel, type ChannelBudget } from '../../store/types';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { CsvImportButton } from '../../components/CsvImportButton';
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { BudgetDonutChart } from './BudgetDonutChart';
 
 // Bornes du slider : on part du principe qu'un seul canal ne recevra jamais plus de 50 000€
 // d'un coup. On pourra rendre ça configurable plus tard si besoin.
@@ -52,13 +52,6 @@ export default function BudgetAllocator() {
     channelBudgets.find((budget) => budget.channel === channel)?.amount ?? 0;
 
   const total = channelBudgets.reduce((sum, budget) => sum + budget.amount, 0);
-
-  // Les données du donut chart : un point par canal, avec son libellé et sa couleur.
-  const chartData = CHANNELS.map((channel) => ({
-    channel,
-    label: CHANNEL_LABELS[channel],
-    amount: getAmount(channel),
-  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -117,34 +110,7 @@ export default function BudgetAllocator() {
         {/* Colonne de droite : le donut chart. Il se met à jour tout seul dès qu'un slider bouge
             ou qu'un CSV est importé, puisqu'il lit exactement les mêmes données du store. */}
         <div className="rounded-lg border border-neutral-800 p-4">
-          {total > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  dataKey="amount"
-                  nameKey="label"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.channel} fill={CHANNEL_COLORS[entry.channel]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `${Number(value).toLocaleString('fr-FR')} €`} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            // Tant qu'aucun budget n'est saisi, un donut vide n'a aucun intérêt (et recharts
-            // n'affiche rien de propre dans ce cas) : on montre juste un message à la place.
-            <div className="flex h-[260px] items-center justify-center text-center text-sm text-neutral-500">
-              Ajustez les sliders ou importez un CSV pour voir la répartition
-            </div>
-          )}
+          <BudgetDonutChart channelBudgets={channelBudgets} />
         </div>
       </div>
 
