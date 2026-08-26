@@ -16,7 +16,7 @@ import {
   type ReportMeta,
   type RiskCriterion,
 } from '../../store/types';
-import { formatMoney, formatNumber } from '../../store/formatters';
+import { formatCount, formatMoney, formatNumber } from '../../store/formatters';
 import { computeFunnelTotals, type FunnelRow } from '../SankeyFunnel/funnelMath';
 
 // Les 3 graphiques à "photographier" pour le rapport. PDFExport.tsx les rend hors écran, avec une
@@ -320,17 +320,17 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
       [
         ...funnelRows.map((row) => [
           CHANNEL_LABELS[row.channel],
-          formatNumber(row.clicks),
-          formatNumber(row.leads),
-          formatNumber(row.customers),
+          formatCount(row.clicks),
+          formatCount(row.leads),
+          formatCount(row.customers),
           formatMoney(row.revenue),
           `${formatNumber(row.roas)}x`,
         ]),
         [
           'Total',
-          formatNumber(totals.clicks),
-          formatNumber(totals.leads),
-          formatNumber(totals.customers),
+          formatCount(totals.clicks),
+          formatCount(totals.leads),
+          formatCount(totals.customers),
           formatMoney(totals.revenue),
           `${formatNumber(totals.roas)}x`,
         ],

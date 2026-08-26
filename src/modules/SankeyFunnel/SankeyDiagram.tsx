@@ -8,7 +8,7 @@
 import { useMemo } from 'react';
 import { sankey, sankeyLeft, sankeyLinkHorizontal } from 'd3-sankey';
 import { CHANNEL_COLORS, CHANNEL_LABELS, type Channel } from '../../store/types';
-import { formatNumber } from '../../store/formatters';
+import { formatCount } from '../../store/formatters';
 import type { FunnelRow } from './funnelMath';
 
 const SANKEY_WIDTH = 860;
@@ -181,7 +181,7 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
             strokeOpacity={0.35}
             strokeWidth={Math.max(1, link.width ?? 0)}
           >
-            <title>{`${CHANNEL_LABELS[link.channel]} : ${formatNumber(link.value)}`}</title>
+            <title>{`${CHANNEL_LABELS[link.channel]} : ${formatCount(link.value)}`}</title>
           </path>
         ))}
       </g>
@@ -196,7 +196,7 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
           const y0 = node.y0 ?? 0;
           const y1 = node.y1 ?? 0;
           const isRightHalf = x0 > SANKEY_WIDTH / 2;
-          const textContent = node.stage === 'channel' ? node.label : formatNumber(node.value ?? 0);
+          const textContent = node.stage === 'channel' ? node.label : formatCount(node.value ?? 0);
           return (
             <g key={node.id}>
               <rect
@@ -207,7 +207,7 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
                 rx={2}
                 fill={CHANNEL_COLORS[node.channel]}
               >
-                <title>{`${CHANNEL_LABELS[node.channel]} · ${node.label} : ${formatNumber(node.value ?? 0)}`}</title>
+                <title>{`${CHANNEL_LABELS[node.channel]} · ${node.label} : ${formatCount(node.value ?? 0)}`}</title>
               </rect>
               <text
                 x={isRightHalf ? x0 - 6 : x1 + 6}

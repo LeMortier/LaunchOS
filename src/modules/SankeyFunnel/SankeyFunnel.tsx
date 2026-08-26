@@ -9,7 +9,7 @@
 import { CHANNELS, CHANNEL_LABELS, type Channel, type ChannelFunnelConfig } from '../../store/types';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { CsvImportButton } from '../../components/CsvImportButton';
-import { formatMoney, formatNumber } from '../../store/formatters';
+import { formatCount, formatMoney, formatNumber } from '../../store/formatters';
 import { computeFunnelRows, computeFunnelTotals, emptyFunnelConfig } from './funnelMath';
 import { SankeyDiagram } from './SankeyDiagram';
 
@@ -198,9 +198,9 @@ export default function SankeyFunnel() {
               <tr key={channel} className="border-t border-neutral-800 text-neutral-300">
                 <td className="py-2 pr-3 font-medium">{CHANNEL_LABELS[channel]}</td>
                 <td className="py-2 pr-3">{formatMoney(amount)}</td>
-                <td className="py-2 pr-3">{formatNumber(clicks)}</td>
-                <td className="py-2 pr-3">{formatNumber(leads)}</td>
-                <td className="py-2 pr-3">{formatNumber(customers)}</td>
+                <td className="py-2 pr-3">{formatCount(clicks)}</td>
+                <td className="py-2 pr-3">{formatCount(leads)}</td>
+                <td className="py-2 pr-3">{formatCount(customers)}</td>
                 <td className="py-2 pr-3">{formatMoney(revenue)}</td>
                 <td className="py-2 pr-3 font-medium text-emerald-400">{formatNumber(roas)}x</td>
               </tr>
@@ -208,9 +208,9 @@ export default function SankeyFunnel() {
             <tr className="border-t border-neutral-700 font-semibold text-white">
               <td className="py-2 pr-3">Total</td>
               <td className="py-2 pr-3">{formatMoney(totals.amount)}</td>
-              <td className="py-2 pr-3">{formatNumber(totals.clicks)}</td>
-              <td className="py-2 pr-3">{formatNumber(totals.leads)}</td>
-              <td className="py-2 pr-3">{formatNumber(totals.customers)}</td>
+              <td className="py-2 pr-3">{formatCount(totals.clicks)}</td>
+              <td className="py-2 pr-3">{formatCount(totals.leads)}</td>
+              <td className="py-2 pr-3">{formatCount(totals.customers)}</td>
               <td className="py-2 pr-3">{formatMoney(totals.revenue)}</td>
               <td className="py-2 pr-3 text-emerald-400">{formatNumber(totals.roas)}x</td>
             </tr>
