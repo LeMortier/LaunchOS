@@ -32,3 +32,4 @@ S'appliquent à tout le texte que tu produis : commentaires de code, README, tex
 - Jamais de tournure "ce n'est pas X, c'est Y" ni ses variantes.
 - Mots et expressions bannis : révolutionnaire, innovant, puissant, robuste, seamless, game-changer, plonger au cœur, dans un monde où, à l'ère de, il est important de noter, il convient de souligner, n'hésitez pas.
 - Phrases courtes, ton direct, aucun superlatif marketing.
+- Messages de commit : jamais de ligne Co-Authored-By ni de mention d'un assistant.
