@@ -52,10 +52,13 @@ export function CsvImportButton<T>({
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
+      {/* Bouton d'import : une action secondaire (chaque module a son propre bouton d'action
+          principal ailleurs), donc style neutre — pas de ambre ici, juste un survol qui le fait
+          ressortir un peu. */}
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="rounded-md border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-100 hover:bg-neutral-700 transition-colors"
+        className="rounded border border-border bg-surface px-3 py-1.5 text-ink transition-colors hover:border-accent"
       >
         {label}
       </button>
@@ -67,17 +70,20 @@ export function CsvImportButton<T>({
         onChange={handleFileChange}
         className="hidden"
       />
+      {/* Lien vers le modèle CSV : reste discret, c'est une aide, pas une action importante. */}
       <button
         type="button"
         onClick={() => downloadCsvTemplate(templateFilename, templateHeaders, templateSampleRows)}
-        className="rounded-md px-3 py-1.5 text-neutral-400 underline decoration-dotted hover:text-neutral-200 transition-colors"
+        className="rounded px-3 py-1.5 text-muted underline decoration-dotted transition-colors hover:text-ink"
       >
         Télécharger le template CSV
       </button>
+      {/* Message de succès : en ambre, parce qu'une confirmation d'import réussi, ça compte. */}
       {lastImportedCount !== null && !error && (
-        <span className="text-emerald-400">{lastImportedCount} ligne(s) importée(s)</span>
+        <span className="text-accent">{lastImportedCount} ligne(s) importée(s)</span>
       )}
-      {error && <span className="text-red-400">{error}</span>}
+      {/* Message d'erreur : en rose/rouge pour bien signaler que quelque chose a raté. */}
+      {error && <span className="text-alert">{error}</span>}
     </div>
   );
 }

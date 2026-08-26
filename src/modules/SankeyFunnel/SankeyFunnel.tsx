@@ -58,18 +58,18 @@ export default function SankeyFunnel() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-8 p-6">
       <div>
-        <h2 className="text-2xl font-bold text-white">Sankey Funnel & ROAS</h2>
-        <p className="text-sm text-neutral-500">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Sankey Funnel & ROAS</h2>
+        <p className="text-sm text-muted mt-2">
           Simulateur d'acquisition : on part du budget par canal pour estimer clics, leads, clients et revenu.
         </p>
       </div>
 
       {/* Encart de preuve : ces montants ne sont PAS saisis ici, ils viennent tels quels du Budget Allocator. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
-        <h3 className="text-sm font-semibold text-neutral-200">Budgets venant du Budget Allocator</h3>
-        <p className="mb-3 text-xs text-neutral-500">
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h3 className="text-sm font-semibold text-ink">Budgets venant du Budget Allocator</h3>
+        <p className="mb-3 text-xs text-muted">
           Ces chiffres sont en lecture seule ici : pour les changer, il faut aller dans le module Budget
           Allocator.
         </p>
@@ -77,18 +77,19 @@ export default function SankeyFunnel() {
           {channelBudgets.map((b) => (
             <li
               key={b.channel}
-              className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300"
+              className="rounded border border-border bg-canvas px-3 py-1.5 text-sm text-ink"
             >
-              <span className="text-neutral-500">{CHANNEL_LABELS[b.channel]} : </span>
-              <span className="font-medium text-emerald-400">{formatMoney(b.amount)}</span>
+              <span className="text-muted">{CHANNEL_LABELS[b.channel]} : </span>
+              {/* Montant = un nombre affiché : toujours en mono pour que les chiffres s'alignent bien. */}
+              <span className="font-mono tabular-nums font-medium">{formatMoney(b.amount)}</span>
             </li>
           ))}
         </ul>
       </div>
 
       {/* Import CSV des hypothèses de conversion, branché directement sur setFunnelConfigs. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-neutral-200">Import des hypothèses</h3>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h3 className="mb-3 text-sm font-semibold text-ink">Import des hypothèses</h3>
         <CsvImportButton<ChannelFunnelConfig>
           label="Importer les hypothèses (CSV)"
           templateFilename="sankey-funnel-template.csv"
@@ -105,11 +106,11 @@ export default function SankeyFunnel() {
       </div>
 
       {/* Tableau éditable : chaque champ est relié au store, chaque frappe met à jour funnelConfigs. */}
-      <div className="overflow-x-auto rounded-lg border border-neutral-800 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-neutral-200">Hypothèses par canal</h3>
+      <div className="overflow-x-auto bg-surface border border-border rounded-lg p-6">
+        <h3 className="mb-3 text-sm font-semibold text-ink">Hypothèses par canal</h3>
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
-            <tr className="text-xs text-neutral-500">
+            <tr className="text-xs text-muted">
               <th className="pb-2 pr-3">Canal</th>
               <th className="pb-2 pr-3">Coût / clic</th>
               <th className="pb-2 pr-3">Taux clic → lead</th>
@@ -119,8 +120,8 @@ export default function SankeyFunnel() {
           </thead>
           <tbody>
             {rows.map(({ channel, config }) => (
-              <tr key={channel} className="border-t border-neutral-800">
-                <td className="py-2 pr-3 font-medium text-neutral-300">{CHANNEL_LABELS[channel]}</td>
+              <tr key={channel} className="border-t border-border">
+                <td className="py-2 pr-3 font-medium text-ink">{CHANNEL_LABELS[channel]}</td>
                 <td className="py-2 pr-3">
                   <input
                     type="number"
@@ -128,7 +129,7 @@ export default function SankeyFunnel() {
                     step={0.01}
                     value={config.costPerClick}
                     onChange={(e) => updateField(channel, 'costPerClick', Number(e.target.value))}
-                    className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
@@ -139,7 +140,7 @@ export default function SankeyFunnel() {
                     step={0.01}
                     value={config.clickToLeadRate}
                     onChange={(e) => updateField(channel, 'clickToLeadRate', Number(e.target.value))}
-                    className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
@@ -150,7 +151,7 @@ export default function SankeyFunnel() {
                     step={0.01}
                     value={config.leadToCustomerRate}
                     onChange={(e) => updateField(channel, 'leadToCustomerRate', Number(e.target.value))}
-                    className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
@@ -160,7 +161,7 @@ export default function SankeyFunnel() {
                     step={1}
                     value={config.avgRevenuePerCustomer}
                     onChange={(e) => updateField(channel, 'avgRevenuePerCustomer', Number(e.target.value))}
-                    className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
               </tr>
@@ -171,19 +172,21 @@ export default function SankeyFunnel() {
 
       {/* Le diagramme de Sankey : la vue "flux" du funnel. Chaque voie de couleur suit un canal du
           Budget Allocator, de son budget jusqu'aux clients, en passant par les clics et les leads.
-          Il se recalcule tout seul dès qu'un budget ou une hypothèse change. */}
-      <div className="overflow-x-auto rounded-lg border border-neutral-800 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-neutral-200">Diagramme du funnel par canal</h3>
+          Il se recalcule tout seul dès qu'un budget ou une hypothèse change. C'est LE bloc héros du
+          module (juste après le tableau des hypothèses, avant le tableau des résultats), donc on lui
+          donne un peu plus de place (p-8) qu'aux autres cartes pour qu'il respire. */}
+      <div className="overflow-x-auto bg-surface border border-border rounded-lg p-8">
+        <h3 className="mb-3 text-sm font-semibold text-ink">Diagramme du funnel par canal</h3>
         <SankeyDiagram rows={rows} />
       </div>
 
       {/* Tableau récapitulatif : le résultat du calcul du funnel, canal par canal + une ligne total,
           en complément du diagramme ci-dessus (utile pour lire les chiffres exacts d'un coup d'œil). */}
-      <div className="overflow-x-auto rounded-lg border border-neutral-800 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-neutral-200">Résultat du funnel par canal</h3>
+      <div className="overflow-x-auto bg-surface border border-border rounded-lg p-6">
+        <h3 className="mb-3 text-sm font-semibold text-ink">Résultat du funnel par canal</h3>
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="text-xs text-neutral-500">
+            <tr className="text-xs text-muted">
               <th className="pb-2 pr-3">Canal</th>
               <th className="pb-2 pr-3">Budget</th>
               <th className="pb-2 pr-3">Clics</th>
@@ -195,24 +198,27 @@ export default function SankeyFunnel() {
           </thead>
           <tbody>
             {rows.map(({ channel, amount, clicks, leads, customers, revenue, roas }) => (
-              <tr key={channel} className="border-t border-neutral-800 text-neutral-300">
+              <tr key={channel} className="border-t border-border text-ink">
                 <td className="py-2 pr-3 font-medium">{CHANNEL_LABELS[channel]}</td>
-                <td className="py-2 pr-3">{formatMoney(amount)}</td>
-                <td className="py-2 pr-3">{formatCount(clicks)}</td>
-                <td className="py-2 pr-3">{formatCount(leads)}</td>
-                <td className="py-2 pr-3">{formatCount(customers)}</td>
-                <td className="py-2 pr-3">{formatMoney(revenue)}</td>
-                <td className="py-2 pr-3 font-medium text-emerald-400">{formatNumber(roas)}x</td>
+                <td className="py-2 pr-3 font-mono tabular-nums">{formatMoney(amount)}</td>
+                <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(clicks)}</td>
+                <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(leads)}</td>
+                <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(customers)}</td>
+                <td className="py-2 pr-3 font-mono tabular-nums">{formatMoney(revenue)}</td>
+                {/* ROAS par canal : reste en couleur normale, l'ambre est réservé à LA valeur clé (le total). */}
+                <td className="py-2 pr-3 font-mono tabular-nums font-medium">{formatNumber(roas)}x</td>
               </tr>
             ))}
-            <tr className="border-t border-neutral-700 font-semibold text-white">
+            <tr className="border-t border-border font-semibold text-ink">
               <td className="py-2 pr-3">Total</td>
-              <td className="py-2 pr-3">{formatMoney(totals.amount)}</td>
-              <td className="py-2 pr-3">{formatCount(totals.clicks)}</td>
-              <td className="py-2 pr-3">{formatCount(totals.leads)}</td>
-              <td className="py-2 pr-3">{formatCount(totals.customers)}</td>
-              <td className="py-2 pr-3">{formatMoney(totals.revenue)}</td>
-              <td className="py-2 pr-3 text-emerald-400">{formatNumber(totals.roas)}x</td>
+              <td className="py-2 pr-3 font-mono tabular-nums">{formatMoney(totals.amount)}</td>
+              <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(totals.clicks)}</td>
+              <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(totals.leads)}</td>
+              <td className="py-2 pr-3 font-mono tabular-nums">{formatCount(totals.customers)}</td>
+              <td className="py-2 pr-3 font-mono tabular-nums">{formatMoney(totals.revenue)}</td>
+              {/* Le ROAS total, c'est LE chiffre clé de tout ce tableau : c'est le seul endroit du
+                  module où on autorise l'ambre sur le ROAS. */}
+              <td className="py-2 pr-3 font-mono tabular-nums text-accent">{formatNumber(totals.roas)}x</td>
             </tr>
           </tbody>
         </table>

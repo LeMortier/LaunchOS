@@ -76,10 +76,10 @@ export default function GTMCanvas() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h2 className="text-lg font-semibold text-white">GTM Canvas</h2>
-        <p className="text-sm text-neutral-400">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">GTM Canvas</h2>
+        <p className="text-sm text-muted mt-2">
           La timeline du lancement, organisée en 3 phases. Ajoute des tâches à la main ou importe-les
           en masse via un CSV.
         </p>
@@ -87,7 +87,7 @@ export default function GTMCanvas() {
 
       {/* Bouton d'import CSV branché directement sur le store : chaque ligne du fichier devient une GTMTask,
           et l'ensemble remplace la liste actuelle des tâches (setGtmTasks). */}
-      <div className="rounded-lg border border-neutral-800 p-4">
+      <div className="bg-surface border border-border rounded-lg p-6">
         <CsvImportButton<GTMTask>
           label="Importer les tâches (CSV)"
           templateFilename="gtm-tasks-template.csv"
@@ -107,24 +107,24 @@ export default function GTMCanvas() {
       {/* Petit formulaire manuel pour ajouter une tâche sans passer par un CSV. */}
       <form
         onSubmit={handleAddTask}
-        className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-800 p-4"
+        className="flex flex-wrap items-end gap-3 bg-surface border border-border rounded-lg p-6"
       >
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-neutral-400">Titre de la tâche</label>
+          <label className="text-xs text-muted">Titre de la tâche</label>
           <input
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex: Envoi de la newsletter"
-            className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white placeholder:text-neutral-600"
+            className="rounded border border-border bg-canvas px-2 py-1.5 text-sm text-ink placeholder:text-muted focus:border-accent"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-neutral-400">Phase</label>
+          <label className="text-xs text-muted">Phase</label>
           <select
             value={phase}
             onChange={(event) => setPhase(event.target.value as GTMPhaseKey)}
-            className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white"
+            className="rounded border border-border bg-canvas px-2 py-1.5 text-sm text-ink focus:border-accent"
           >
             {GTM_PHASES.map((key) => (
               <option key={key} value={key}>
@@ -134,26 +134,28 @@ export default function GTMCanvas() {
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-neutral-400">Jour de début</label>
+          <label className="text-xs text-muted">Jour de début</label>
           <input
             type="number"
             value={startDay}
             onChange={(event) => setStartDay(event.target.value)}
-            className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white"
+            className="w-24 rounded border border-border bg-canvas px-2 py-1.5 text-sm font-mono tabular-nums text-ink focus:border-accent"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-neutral-400">Durée (jours)</label>
+          <label className="text-xs text-muted">Durée (jours)</label>
           <input
             type="number"
             value={durationDays}
             onChange={(event) => setDurationDays(event.target.value)}
-            className="w-24 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white"
+            className="w-24 rounded border border-border bg-canvas px-2 py-1.5 text-sm font-mono tabular-nums text-ink focus:border-accent"
           />
         </div>
+        {/* Bouton d'action principale de ce bloc (la seule chose ambre ici, comme demandé
+            par la charte : un seul accent, sur l'action la plus importante). */}
         <button
           type="submit"
-          className="rounded-md bg-emerald-500 px-3 py-1.5 text-sm font-medium text-neutral-950 hover:bg-emerald-400 transition-colors"
+          className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-canvas transition-opacity hover:opacity-90"
         >
           Ajouter la tâche
         </button>
@@ -164,30 +166,33 @@ export default function GTMCanvas() {
           Pour l'instant l'affichage est en lecture/écriture via le formulaire et l'import CSV seulement. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {GTM_PHASES.map((phaseKey) => (
-          <div key={phaseKey} className="rounded-lg border border-neutral-800 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-emerald-400">
+          <div key={phaseKey} className="bg-surface border border-border rounded-lg p-6">
+            {/* Titre de phase : juste un repère visuel net, pas d'ambre ici (ce n'est ni une
+                action ni LE chiffre clé du module). */}
+            <h3 className="mb-3 font-display text-sm font-semibold text-ink">
               {GTM_PHASE_LABELS[phaseKey]}
             </h3>
             {tasksByPhase[phaseKey].length === 0 ? (
-              <p className="text-xs text-neutral-600">Aucune tâche pour cette phase.</p>
+              <p className="text-xs text-muted">
+                Ajoutez une tâche pour cette phase avec le formulaire ci-dessus.
+              </p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {tasksByPhase[phaseKey].map((task) => (
-                  <li
-                    key={task.id}
-                    className="rounded-md border border-neutral-800 bg-neutral-900 p-2 text-sm"
-                  >
+                  <li key={task.id} className="rounded border border-border bg-canvas p-2 text-sm">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-neutral-100">{task.title}</span>
+                      <span className="text-ink">{task.title}</span>
                       <button
                         type="button"
                         onClick={() => removeGtmTask(task.id)}
-                        className="text-xs text-neutral-500 hover:text-red-400 transition-colors"
+                        className="text-xs text-muted hover:text-alert transition-colors"
                       >
                         Supprimer
                       </button>
                     </div>
-                    <div className="mt-1 text-xs text-neutral-500">
+                    {/* Donnée numérique (jour de début + durée) : chiffres en font-mono/tabular-nums
+                        pour qu'ils s'alignent bien visuellement. */}
+                    <div className="mt-1 font-mono tabular-nums text-muted text-xs">
                       Jour {task.startDay} · {task.durationDays} jour(s)
                     </div>
                   </li>

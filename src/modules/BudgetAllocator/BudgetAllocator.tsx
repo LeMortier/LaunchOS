@@ -54,10 +54,10 @@ export default function BudgetAllocator() {
   const total = channelBudgets.reduce((sum, budget) => sum + budget.amount, 0);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h2 className="text-lg font-semibold text-white">Budget Allocator</h2>
-        <p className="text-sm text-neutral-400">Répartition du budget marketing par canal</p>
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Budget Allocator</h2>
+        <p className="text-sm text-muted mt-2">Répartition du budget marketing par canal</p>
       </div>
 
       {/* Import/export CSV, branché directement sur setChannelBudgets pour remplacer toute la
@@ -73,16 +73,16 @@ export default function BudgetAllocator() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Colonne de gauche : un slider par canal pour ajuster le budget à la main. */}
-        <div className="flex flex-col gap-4 rounded-lg border border-neutral-800 p-4">
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
           {CHANNELS.map((channel) => {
             const amount = getAmount(channel);
             return (
               <div key={channel} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-sm">
-                  <label htmlFor={`slider-${channel}`} className="text-neutral-300">
+                  <label htmlFor={`slider-${channel}`} className="text-muted">
                     {CHANNEL_LABELS[channel]}
                   </label>
-                  <span className="font-medium text-emerald-400">
+                  <span className="font-mono tabular-nums text-ink">
                     {amount.toLocaleString('fr-FR')} €
                   </span>
                 </div>
@@ -94,14 +94,15 @@ export default function BudgetAllocator() {
                   step={BUDGET_STEP}
                   value={amount}
                   onChange={(event) => setChannelBudget(channel, Number(event.target.value))}
-                  className="w-full accent-emerald-500"
+                  className="w-full accent-accent"
                 />
               </div>
             );
           })}
-          <div className="mt-2 flex items-center justify-between border-t border-neutral-800 pt-3 text-sm">
-            <span className="text-neutral-400">Total alloué</span>
-            <span className="text-base font-semibold text-white">
+          {/* Le total alloué, c'est LE chiffre qui résume le module : c'est le seul en ambre ici. */}
+          <div className="mt-2 flex items-center justify-between border-t border-border pt-3 text-sm">
+            <span className="text-muted">Total alloué</span>
+            <span className="font-mono tabular-nums text-base font-semibold text-accent">
               {total.toLocaleString('fr-FR')} €
             </span>
           </div>
@@ -109,7 +110,7 @@ export default function BudgetAllocator() {
 
         {/* Colonne de droite : le donut chart. Il se met à jour tout seul dès qu'un slider bouge
             ou qu'un CSV est importé, puisqu'il lit exactement les mêmes données du store. */}
-        <div className="rounded-lg border border-neutral-800 p-4">
+        <div className="rounded-lg border border-border bg-surface p-6">
           <BudgetDonutChart channelBudgets={channelBudgets} />
         </div>
       </div>

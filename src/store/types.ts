@@ -19,10 +19,10 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
 // Budget Allocator, les flux du diagramme Sankey...). En la gardant à un seul endroit, on est sûr que
 // "Ads" a toujours la même couleur peu importe le graphique dans lequel on le regarde.
 export const CHANNEL_COLORS: Record<Channel, string> = {
-  seo: '#3987e5', // bleu
-  ads: '#008300', // vert
-  influence: '#d55181', // magenta
-  pr: '#c98500', // jaune
+  seo: '#5B8DEF', // bleu
+  ads: '#E5677E', // rose
+  influence: '#B48AF0', // violet
+  pr: '#F2A65A', // ambre
 };
 
 // Les 3 grandes phases du GTM Canvas (le calendrier de lancement).

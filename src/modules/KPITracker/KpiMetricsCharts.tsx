@@ -8,9 +8,11 @@ import { KpiLineChart } from './KpiLineChart';
 interface KpiMetricsChartsProps {
   kpiEntries: KPIWeeklyEntry[];
   height?: number;
+  /** 'light' = version imprimable (fond blanc, texte foncé) utilisée hors écran pour le PDF Export. */
+  variant?: 'dark' | 'light';
 }
 
-export function KpiMetricsCharts({ kpiEntries, height = 220 }: KpiMetricsChartsProps) {
+export function KpiMetricsCharts({ kpiEntries, height = 220, variant = 'dark' }: KpiMetricsChartsProps) {
   // Regroupe les entrées par métrique, chacune triée par semaine (sinon la courbe part dans tous
   // les sens si les semaines ne sont pas dans l'ordre du store).
   const series = useMemo(() => {
@@ -26,12 +28,14 @@ export function KpiMetricsCharts({ kpiEntries, height = 220 }: KpiMetricsChartsP
     }));
   }, [kpiEntries]);
 
+  const labelClass = variant === 'light' ? 'text-neutral-600' : 'text-muted';
+
   return (
     <div className="flex flex-col gap-4">
       {series.map(({ metric, data }) => (
         <div key={metric}>
-          <h4 className="mb-1 text-xs font-medium text-neutral-400">{metric}</h4>
-          <KpiLineChart data={data} height={height} />
+          <h4 className={`mb-1 text-xs font-medium ${labelClass}`}>{metric}</h4>
+          <KpiLineChart data={data} height={height} variant={variant} />
         </div>
       ))}
     </div>

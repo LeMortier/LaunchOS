@@ -58,12 +58,12 @@ export default function RiskScorer() {
     [riskCriteria],
   );
 
-  // Un peu de couleur selon le niveau de risque, pour que le chiffre parle tout de suite à l'œil :
-  // vert = pas trop de risque, orange = risque moyen, rouge = risque élevé.
-  const scoreColorClass =
-    globalScore < 4 ? 'text-emerald-400' : globalScore < 7 ? 'text-amber-400' : 'text-red-400';
-  const barColorClass =
-    globalScore < 4 ? 'bg-emerald-500' : globalScore < 7 ? 'bg-amber-500' : 'bg-red-500';
+  // Couleur du score selon son niveau, avec le même barème que la barre de pilotage (CockpitBar) en
+  // haut de l'app, pour que le risque se lise pareil partout dans LaunchOS :
+  // en dessous de 4 rien à signaler (couleur neutre), entre 4 et 7 ça mérite attention (ambre),
+  // à partir de 7 c'est un risque élevé (rose/rouge d'alerte). La barre en dessous reprend les mêmes 3 niveaux.
+  const scoreColorClass = globalScore >= 7 ? 'text-alert' : globalScore >= 4 ? 'text-accent' : 'text-ink';
+  const barColorClass = globalScore >= 7 ? 'bg-alert' : globalScore >= 4 ? 'bg-accent' : 'bg-muted';
 
   // Transforme une ligne du CSV (tout est du texte brut à ce stade) en vrai critère de risque typé,
   // en convertissant score et weight en nombres avec Number().
@@ -75,10 +75,10 @@ export default function RiskScorer() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h2 className="text-lg font-semibold text-white">Risk Scorer</h2>
-        <p className="text-sm text-neutral-400">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Risk Scorer</h2>
+        <p className="text-sm text-muted mt-2">
           Notez chaque critère de 0 (aucun risque) à 10 (risque maximal) pour obtenir un score de
           risque global pondéré.
         </p>
@@ -95,15 +95,17 @@ export default function RiskScorer() {
         onImport={(rows) => setRiskCriteria(rows)}
       />
 
-      {/* Carte du score global, avec une barre qui s'anime en douceur dès qu'une note change. */}
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+      {/* Carte du score global : LE chiffre clé de ce module, donc c'est le seul endroit du fichier
+          où l'ambre (ou l'alerte) peut apparaître pour de vrai. La barre en dessous s'anime en
+          douceur dès qu'une note change. */}
+      <div className="rounded-lg border border-border bg-surface p-6">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-neutral-400">Score de risque global</span>
-          <span className={`text-3xl font-bold transition-all duration-500 ${scoreColorClass}`}>
-            {globalScore.toFixed(1)} <span className="text-base text-neutral-500">/ 10</span>
+          <span className="text-sm text-muted">Score de risque global</span>
+          <span className={`font-mono text-3xl font-semibold tabular-nums transition-all duration-500 ${scoreColorClass}`}>
+            {globalScore.toFixed(1)} <span className="text-base text-muted">/ 10</span>
           </span>
         </div>
-        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-neutral-800">
+        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-border">
           <div
             className={`h-full rounded-full transition-all duration-700 ease-out ${barColorClass}`}
             style={{ width: `${Math.min(100, Math.max(0, (globalScore / 10) * 100))}%` }}
@@ -114,12 +116,12 @@ export default function RiskScorer() {
       {/* La liste des 10 critères, chacun avec son slider relié directement à l'action du store
           updateRiskCriterionScore : dès qu'on bouge le curseur, le store est mis à jour et le
           score global recalculé automatiquement au-dessus. */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {riskCriteria.map((criterion) => (
-          <div key={criterion.id} className="rounded-lg border border-neutral-800 p-4">
+          <div key={criterion.id} className="rounded-lg border border-border bg-surface p-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-200">{criterion.label}</span>
-              <span className="text-sm text-neutral-400">
+              <span className="text-sm font-medium text-ink">{criterion.label}</span>
+              <span className="font-mono text-sm text-muted tabular-nums">
                 poids {Math.round(criterion.weight * 100)}%
               </span>
             </div>
@@ -133,9 +135,9 @@ export default function RiskScorer() {
                 onChange={(event) =>
                   updateRiskCriterionScore(criterion.id, Number(event.target.value))
                 }
-                className="w-full accent-emerald-500"
+                className="w-full accent-accent"
               />
-              <span className="w-8 text-right text-sm font-semibold text-white transition-all duration-300">
+              <span className="w-8 text-right font-mono text-sm font-semibold tabular-nums text-ink transition-all duration-300">
                 {criterion.score}
               </span>
             </div>

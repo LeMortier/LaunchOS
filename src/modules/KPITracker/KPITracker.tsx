@@ -81,16 +81,16 @@ export default function KPITracker() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h2 className="text-lg font-semibold text-white">KPI Tracker</h2>
-        <p className="text-sm text-neutral-400">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">KPI Tracker</h2>
+        <p className="text-sm text-muted mt-2">
           Suivi hebdo des indicateurs clés : ce qu'on a vraiment obtenu (réel) comparé à l'objectif fixé.
         </p>
       </div>
 
       {/* Import/export CSV : branché directement sur setKpiEntries, tout le fichier remplace la liste actuelle. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
+      <div className="bg-surface border border-border rounded-lg p-6">
         <CsvImportButton<KPIWeeklyEntry>
           label="Importer les KPI (CSV)"
           templateFilename="kpi-template.csv"
@@ -109,15 +109,15 @@ export default function KPITracker() {
       </div>
 
       {/* Graphique : deux courbes (réel / objectif) pour la métrique choisie dans le select. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
+      <div className="bg-surface border border-border rounded-lg p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <h3 className="text-sm font-medium text-neutral-200">Progression</h3>
+          <h3 className="text-sm font-medium text-ink">Progression</h3>
           {/* Le select n'apparaît que s'il y a plusieurs métriques à comparer, pas besoin sinon. */}
           {metrics.length > 1 && (
             <select
               value={activeMetric}
               onChange={(event) => setSelectedMetric(event.target.value)}
-              className="rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100"
+              className="rounded border border-border bg-canvas px-2 py-1 text-sm text-ink"
             >
               {metrics.map((metric) => (
                 <option key={metric} value={metric}>
@@ -129,8 +129,10 @@ export default function KPITracker() {
         </div>
 
         {chartData.length === 0 ? (
-          <p className="text-sm text-neutral-500">
-            Aucune donnée pour l'instant : importe un CSV ou ajoute une entrée avec le formulaire ci-dessous.
+          // Un écran vide doit dire quoi faire, pas juste constater qu'il n'y a rien : on guide
+          // vers les deux façons d'ajouter des données (CSV ou formulaire juste en dessous).
+          <p className="text-sm text-muted">
+            Importez un CSV ou ajoutez une première semaine pour voir la courbe.
           </p>
         ) : (
           <div className="h-72 w-full">
@@ -140,48 +142,50 @@ export default function KPITracker() {
       </div>
 
       {/* Formulaire manuel : ajoute (ou met à jour) une entrée directement dans le store, sans passer par un CSV. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
-        <h3 className="text-sm font-medium text-neutral-200 mb-3">Ajouter une entrée</h3>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h3 className="text-sm font-medium text-ink mb-3">Ajouter une entrée</h3>
         <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Semaine
             <input
               value={form.week}
               onChange={(event) => setForm({ ...form, week: event.target.value })}
               placeholder="S1"
-              className="rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100 w-24"
+              className="rounded border border-border bg-canvas px-2 py-1 text-sm text-ink w-24"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Métrique
             <input
               value={form.metric}
               onChange={(event) => setForm({ ...form, metric: event.target.value })}
               placeholder="Inscriptions"
-              className="rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100 w-36"
+              className="rounded border border-border bg-canvas px-2 py-1 text-sm text-ink w-36"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Réel
             <input
               type="number"
               value={form.actual}
               onChange={(event) => setForm({ ...form, actual: event.target.value })}
-              className="rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100 w-24"
+              className="rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink w-24"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Objectif
             <input
               type="number"
               value={form.target}
               onChange={(event) => setForm({ ...form, target: event.target.value })}
-              className="rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100 w-24"
+              className="rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink w-24"
             />
           </label>
+          {/* "Ajouter" est la seule action de ce bloc, donc c'est elle qui porte l'ambre —
+              pas de couleur décorative ailleurs dans le formulaire. */}
           <button
             type="submit"
-            className="rounded-md bg-emerald-500 px-3 py-1.5 text-sm font-medium text-neutral-950 hover:bg-emerald-400 transition-colors"
+            className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-canvas hover:bg-accent/90 transition-colors"
           >
             Ajouter
           </button>
@@ -189,15 +193,17 @@ export default function KPITracker() {
       </div>
 
       {/* Tableau brut : toutes les entrées KPI du store, sans filtre, pour vérifier ce qui est vraiment stocké. */}
-      <div className="rounded-lg border border-neutral-800 p-4">
-        <h3 className="text-sm font-medium text-neutral-200 mb-3">Toutes les entrées</h3>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h3 className="text-sm font-medium text-ink mb-3">Toutes les entrées</h3>
         {kpiEntries.length === 0 ? (
-          <p className="text-sm text-neutral-500">Aucune entrée pour le moment.</p>
+          <p className="text-sm text-muted">
+            Aucune entrée pour le moment : importez un CSV ou utilisez le formulaire ci-dessus.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-neutral-500 border-b border-neutral-800">
+                <tr className="text-muted border-b border-border">
                   <th className="py-1.5 pr-4 font-medium">Semaine</th>
                   <th className="py-1.5 pr-4 font-medium">Métrique</th>
                   <th className="py-1.5 pr-4 font-medium">Réel</th>
@@ -206,11 +212,13 @@ export default function KPITracker() {
               </thead>
               <tbody>
                 {kpiEntries.map((entry) => (
-                  <tr key={entry.id} className="border-b border-neutral-900 text-neutral-300">
+                  <tr key={entry.id} className="border-b border-border text-ink">
                     <td className="py-1.5 pr-4">{entry.week}</td>
                     <td className="py-1.5 pr-4">{entry.metric}</td>
-                    <td className="py-1.5 pr-4">{entry.actual}</td>
-                    <td className="py-1.5 pr-4">{entry.target}</td>
+                    {/* Réel / Objectif sont des nombres : la police mono + tabular-nums garde les
+                        chiffres alignés en colonne, plus facile à comparer d'un coup d'œil. */}
+                    <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.actual}</td>
+                    <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.target}</td>
                   </tr>
                 ))}
               </tbody>
@@ -219,8 +227,9 @@ export default function KPITracker() {
         )}
       </div>
 
-      {/* TODO : calculer et afficher l'écart (réel - objectif) coloré en vert/rouge par ligne,
-          et éventuellement une petite projection de tendance pour anticiper la fin du mois. */}
+      {/* TODO : calculer et afficher l'écart (réel - objectif) par ligne, coloré en text-alert
+          quand l'objectif n'est pas atteint, et éventuellement une petite projection de tendance
+          pour anticiper la fin du mois. */}
     </div>
   );
 }

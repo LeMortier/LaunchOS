@@ -120,7 +120,8 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     ensureSpace(24);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11.5);
-    doc.setTextColor(16, 145, 105); // le vert "emerald" utilisé comme accent dans le reste de l'app
+    doc.setTextColor(196, 120, 30); // ambre foncé : version imprimable de l'accent #F2A65A, assez
+    // sombre pour rester lisible sur fond blanc (l'ambre clair d'origine serait trop pâle à l'impression)
     pdfText(text, PAGE_MARGIN, cursor.y);
     cursor.y += 18;
   };

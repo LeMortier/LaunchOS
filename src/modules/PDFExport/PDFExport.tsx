@@ -1,6 +1,6 @@
 // Module 6 : PDF Export — le rapport consolidé qui résume tout ce qui a été fait dans les 5 autres modules.
 // Le formulaire et le résumé chiffré écrivent/lisent le store partagé comme les autres modules. Le
-// bouton "Générer le PDF" appelle generateReport.ts (jsPDF + html2canvas) pour assembler un vrai
+// bouton "Générer le PDF" appelle generateReport.ts (jsPDF + html-to-image) pour assembler un vrai
 // fichier PDF téléchargeable à partir de ces mêmes données.
 import { useRef, useState, type ChangeEvent } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
@@ -37,7 +37,7 @@ export default function PDFExport() {
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Références vers les 3 graphiques rendus hors écran tout en bas de ce fichier : c'est ce que
-  // html2canvas va "photographier" pour les incruster comme images dans le PDF.
+  // html-to-image va "photographier" pour les incruster comme images dans le PDF.
   const budgetDonutRef = useRef<HTMLDivElement>(null);
   const kpiChartsRef = useRef<HTMLDivElement>(null);
   const sankeyDiagramRef = useRef<HTMLDivElement>(null);
@@ -87,41 +87,41 @@ export default function PDFExport() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h2 className="text-lg font-semibold text-white">PDF Export</h2>
-        <p className="text-sm text-neutral-400">Rapport consolidé de tous les modules</p>
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">PDF Export</h2>
+        <p className="mt-2 text-sm text-muted">Rapport consolidé de tous les modules</p>
       </div>
 
       {/* Formulaire manuel : chaque champ écrit directement dans le store partagé via setReportMeta. */}
-      <section className="rounded-lg border border-neutral-800 p-4 flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-neutral-200">Informations du rapport</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+      <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
+        <h3 className="text-sm font-medium text-ink">Informations du rapport</h3>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Titre
             <input
               type="text"
               value={reportMeta.title}
               onChange={handleFieldChange('title')}
-              className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="rounded border border-border bg-canvas px-2 py-1.5 text-sm text-ink focus:border-accent"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Sous-titre
             <input
               type="text"
               value={reportMeta.subtitle}
               onChange={handleFieldChange('subtitle')}
-              className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="rounded border border-border bg-canvas px-2 py-1.5 text-sm text-ink focus:border-accent"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Préparé par
             <input
               type="text"
               value={reportMeta.preparedBy}
               onChange={handleFieldChange('preparedBy')}
-              className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="rounded border border-border bg-canvas px-2 py-1.5 text-sm text-ink focus:border-accent"
             />
           </label>
         </div>
@@ -143,9 +143,9 @@ export default function PDFExport() {
       </section>
 
       {/* Résumé chiffré : un chiffre clé par module, tiré en direct du store partagé. */}
-      <section className="rounded-lg border border-neutral-800 p-4">
-        <h3 className="text-sm font-medium text-neutral-200 mb-3">Résumé des modules</h3>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <section className="rounded-lg border border-border bg-surface p-6">
+        <h3 className="mb-4 text-sm font-medium text-ink">Résumé des modules</h3>
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <SummaryCard label="Budget total" value={`${totalBudget}€`} />
           <SummaryCard label="Tâches GTM" value={`${gtmTasks.length}`} />
           <SummaryCard label="Entrées KPI" value={`${kpiEntries.length}`} />
@@ -158,50 +158,54 @@ export default function PDFExport() {
       </section>
 
       {/* Bouton de génération du PDF : appelle generateLaunchReportPdf, qui construit le fichier et
-          déclenche son téléchargement. Désactivé pendant la génération pour éviter un double-clic. */}
-      <section className="rounded-lg border border-neutral-800 p-4 flex flex-col gap-2">
+          déclenche son téléchargement. Désactivé pendant la génération pour éviter un double-clic.
+          C'est LA vraie action de ce module, donc en ambre (accent). */}
+      <section className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-6">
         <button
           type="button"
           onClick={handleGeneratePdf}
           disabled={isGenerating}
-          className="self-start rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-emerald-400 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          className="self-start rounded bg-accent px-4 py-2 text-sm font-medium text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isGenerating ? 'Génération en cours…' : 'Générer le PDF'}
         </button>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-muted">
           Le PDF reprend la page de couverture ci-dessus, puis une section par module (GTM Canvas,
           Budget Allocator, KPI Tracker, Risk Scorer, Sankey Funnel), avec leurs graphiques et tableaux.
           Un module sans donnée affiche simplement "Aucune donnée renseignée" plutôt qu'une page blanche.
         </p>
-        {generationError && <p className="text-xs text-red-400">{generationError}</p>}
+        {generationError && <p className="text-xs text-alert">{generationError}</p>}
       </section>
 
-      {/* Copies hors écran des 3 graphiques (donut budget, courbes KPI, diagramme Sankey), avec les
-          mêmes composants que les modules utilisent à l'écran. Elles ne sont jamais visibles pour
-          l'utilisateur (position fixe très à gauche de l'écran) : elles servent uniquement de "photo"
-          pour html2canvas au moment de générer le PDF, puisqu'un graphique SVG ne peut pas se
-          transformer directement en instructions de dessin PDF. */}
+      {/* Copies hors écran des 3 graphiques (donut budget, courbes KPI, diagramme Sankey), en variant
+          "light" (fond blanc, texte foncé) : c'est la version imprimable, différente de celle affichée
+          à l'écran (fond sombre). Elles ne sont jamais visibles pour l'utilisateur (position fixe très
+          à gauche de l'écran) : elles servent uniquement de "photo" pour html-to-image au moment de
+          générer le PDF, puisqu'un graphique SVG ne peut pas se transformer directement en
+          instructions de dessin PDF. */}
       <div aria-hidden style={{ position: 'fixed', top: 0, left: '-10000px', width: 820 }}>
-        <div ref={budgetDonutRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
-          <BudgetDonutChart channelBudgets={channelBudgets} height={260} />
+        <div ref={budgetDonutRef} style={{ backgroundColor: '#ffffff', padding: 16 }}>
+          <BudgetDonutChart channelBudgets={channelBudgets} height={260} variant="light" />
         </div>
-        <div ref={kpiChartsRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
-          <KpiMetricsCharts kpiEntries={kpiEntries} height={220} />
+        <div ref={kpiChartsRef} style={{ backgroundColor: '#ffffff', padding: 16 }}>
+          <KpiMetricsCharts kpiEntries={kpiEntries} height={220} variant="light" />
         </div>
-        <div ref={sankeyDiagramRef} style={{ backgroundColor: '#0a0a0a', padding: 16 }}>
-          <SankeyDiagram rows={funnelRows} />
+        <div ref={sankeyDiagramRef} style={{ backgroundColor: '#ffffff', padding: 16 }}>
+          <SankeyDiagram rows={funnelRows} variant="light" />
         </div>
       </div>
     </div>
   );
 }
 
-// Petite carte réutilisable pour afficher un chiffre clé avec son étiquette, dans le résumé des modules.
+// Petite carte réutilisable pour afficher un chiffre avec son étiquette, dans le résumé des modules.
+// En texte neutre (pas ambre) : ce sont 5 chiffres secondaires côte à côte, pas LA valeur clé du
+// module (celle-là, l'ambre la réserve à la CockpitBar et au score du Risk Scorer).
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-3">
-      <div className="text-lg font-semibold text-emerald-400">{value}</div>
-      <div className="text-xs text-neutral-500">{label}</div>
+    <div className="rounded border border-border bg-canvas p-3">
+      <div className="font-mono text-lg font-medium tabular-nums text-ink">{value}</div>
+      <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }

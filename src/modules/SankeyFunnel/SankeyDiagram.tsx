@@ -1,18 +1,19 @@
-// Le diagramme de Sankey (le graphique en "flux" du funnel), extrait de SankeyFunnel.tsx dans son
-// propre composant pour pouvoir être réutilisé tel quel par le PDF Export (qui a besoin d'afficher
-// exactement le même diagramme, hors écran, pour le capturer en image avec html2canvas).
+// Le diagramme de Sankey (le graphique en "flux" du funnel) — l'élément le plus impressionnant du
+// produit, donc traité en "héros" : grand, animé à l'apparition, couleurs de canal fidèles. Extrait
+// de SankeyFunnel.tsx dans son propre composant pour pouvoir être réutilisé tel quel par le PDF
+// Export (qui a besoin d'afficher exactement le même diagramme, hors écran, pour le capturer en image).
 // Un diagramme de Sankey est fait de "nœuds" (des rectangles, ex: un canal, une étape) reliés par des
 // "liens" (des flux, dont l'épaisseur représente une quantité). Ici, chaque canal a sa propre "voie" :
 // Canal -> Clics -> Leads -> Clients, avec 4 voies parallèles (une par canal) qui gardent la couleur
 // du canal tout du long, pour qu'on puisse suivre visuellement où l'argent de chaque canal finit.
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { sankey, sankeyLeft, sankeyLinkHorizontal } from 'd3-sankey';
 import { CHANNEL_COLORS, CHANNEL_LABELS, type Channel } from '../../store/types';
 import { formatCount } from '../../store/formatters';
 import type { FunnelRow } from './funnelMath';
 
 const SANKEY_WIDTH = 860;
-const SANKEY_HEIGHT = 380;
+const SANKEY_HEIGHT = 460; // "héros" : plus haut que les autres graphiques, pour que chaque voie respire
 
 // Les 4 colonnes affichées dans le diagramme, dans l'ordre. "stage" sert à retrouver la position
 // x de chaque colonne une fois le diagramme calculé (voir plus bas).
@@ -85,13 +86,21 @@ function buildSankeyGraph(rows: { channel: Channel; clicks: number; leads: numbe
   return { nodes, links };
 }
 
+// Vrai si l'utilisateur a demandé, au niveau de son système, de réduire les animations. On ne lit ça
+// qu'une fois au montage (pas besoin de réagir si la préférence change pendant que la page est ouverte).
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 interface SankeyDiagramProps {
   rows: Pick<FunnelRow, 'channel' | 'clicks' | 'leads' | 'customers'>[];
+  /** 'light' = version imprimable (fond blanc, texte foncé) utilisée hors écran pour le PDF Export. */
+  variant?: 'dark' | 'light';
 }
 
 // N'a pas de style d'encart (bordure, padding) : c'est au composant appelant de décider comment
 // l'entourer, puisqu'il est utilisé à la fois dans la page du module et hors écran pour le PDF.
-export function SankeyDiagram({ rows }: SankeyDiagramProps) {
+export function SankeyDiagram({ rows, variant = 'dark' }: SankeyDiagramProps) {
   // Calcule la position de chaque nœud/lien du diagramme. useMemo évite de refaire ce calcul à
   // chaque rendu si "rows" n'a pas vraiment changé.
   const sankeyDiagram = useMemo(() => {
@@ -105,7 +114,7 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
       .nodeId((node) => node.index ?? 0)
       .nodeAlign(sankeyLeft)
       .nodeWidth(14)
-      .nodePadding(18)
+      .nodePadding(24)
       .extent([
         [1, 28],
         [SANKEY_WIDTH - 1, SANKEY_HEIGHT - 1],
@@ -139,12 +148,38 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
     return { nodes: layout.nodes, links: layout.links, headers, linkPath };
   }, [rows]);
 
+  // "revealed" pilote l'animation d'apparition des flux : ils naissent à largeur 0 puis grandissent
+  // jusqu'à leur vraie largeur (transition CSS sur strokeWidth). Si l'utilisateur préfère moins
+  // d'animations, on saute directement à l'état final, sans jamais passer par la largeur 0.
+  const [revealed, setRevealed] = useState(prefersReducedMotion);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    if (!sankeyDiagram) {
+      // Le diagramme a disparu (plus de budget/coût par clic renseigné) : on réarme l'animation pour
+      // la prochaine fois qu'il réapparaîtra.
+      setRevealed(false);
+      return;
+    }
+    if (revealed) return;
+    // requestAnimationFrame laisse le navigateur peindre une première fois à largeur 0 avant de
+    // passer à la largeur réelle : sans ce délai d'une frame, il n'y a rien "avant" à partir duquel
+    // la transition CSS puisse s'animer.
+    const frameId = requestAnimationFrame(() => setRevealed(true));
+    return () => cancelAnimationFrame(frameId);
+  }, [sankeyDiagram, revealed]);
+
+  const isLight = variant === 'light';
+  const headerTextClass = isLight ? 'fill-neutral-500' : 'fill-muted';
+  const valueTextClass = isLight ? 'fill-neutral-700' : 'fill-ink';
+  const emptyTextClass = isLight ? 'text-neutral-500' : 'text-muted';
+
   if (!sankeyDiagram) {
     // Sans clics sur aucun canal (coût/clic à 0 partout, ou budget à 0), il n'y a rien à faire
-    // circuler dans le diagramme : on l'explique plutôt que d'afficher un cadre vide.
+    // circuler dans le diagramme : on dit quoi faire plutôt que de constater un vide.
     return (
-      <div className="flex h-[160px] items-center justify-center text-center text-sm text-neutral-500">
-        Renseignez un budget et un coût/clic pour voir le diagramme du funnel
+      <div className={`flex h-[200px] items-center justify-center text-center text-sm ${emptyTextClass}`}>
+        Renseignez un budget et un coût par clic pour dessiner le funnel.
       </div>
     );
   }
@@ -164,22 +199,25 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
           x={header.x}
           y={16}
           textAnchor={header.anchor}
-          className="fill-neutral-500 text-[11px] uppercase tracking-wide"
+          className={`${headerTextClass} text-[11px] uppercase tracking-wide`}
         >
           {header.label}
         </text>
       ))}
 
       {/* Les flux : un chemin par lien, épais proportionnellement à sa valeur (clics/leads/
-          clients), coloré selon le canal d'origine pour rester cohérent avec le donut chart. */}
+          clients), coloré selon le canal d'origine pour rester cohérent avec le donut chart.
+          "revealed" fait naître chaque flux à largeur 0 puis grandir jusqu'à sa vraie largeur ;
+          motion-reduce coupe cette transition si l'utilisateur a demandé moins d'animations. */}
       <g fill="none">
         {sankeyDiagram.links.map((link, i) => (
           <path
             key={i}
             d={sankeyDiagram.linkPath(link) ?? undefined}
             stroke={CHANNEL_COLORS[link.channel]}
-            strokeOpacity={0.35}
-            strokeWidth={Math.max(1, link.width ?? 0)}
+            strokeOpacity={0.4}
+            strokeWidth={revealed ? Math.max(1, link.width ?? 0) : 0}
+            className="transition-[stroke-width] duration-700 ease-out motion-reduce:transition-none"
           >
             <title>{`${CHANNEL_LABELS[link.channel]} : ${formatCount(link.value)}`}</title>
           </path>
@@ -214,7 +252,7 @@ export function SankeyDiagram({ rows }: SankeyDiagramProps) {
                 y={(y0 + y1) / 2}
                 dominantBaseline="middle"
                 textAnchor={isRightHalf ? 'end' : 'start'}
-                className="fill-neutral-300 text-[11px]"
+                className={`${valueTextClass} font-mono text-[11px] tabular-nums`}
               >
                 {textContent}
               </text>

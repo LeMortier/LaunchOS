@@ -3,6 +3,7 @@
 // et qui bascule de l'un à l'autre quand on clique dans la Sidebar.
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { CockpitBar } from './components/CockpitBar';
 import { MODULE_IDS, type ModuleId } from './modules/registry';
 import GTMCanvas from './modules/GTMCanvas/GTMCanvas';
 import BudgetAllocator from './modules/BudgetAllocator/BudgetAllocator';
@@ -32,11 +33,14 @@ function App() {
   const ActiveModuleComponent = MODULE_COMPONENTS[activeModule];
 
   return (
-    <div className="flex h-screen bg-neutral-950 text-white">
+    <div className="flex h-screen bg-canvas text-ink">
       <Sidebar activeModule={activeModule} onSelectModule={setActiveModule} />
       {/* La zone de contenu à droite : elle scrolle toute seule si le module affiché est plus grand
-          que l'écran, sans faire bouger la Sidebar. */}
+          que l'écran, sans faire bouger la Sidebar. La CockpitBar reste collée en haut de cette zone
+          (position sticky) pendant qu'on scrolle : les 4 constantes vitales du lancement restent
+          toujours sous les yeux, peu importe le module ouvert. */}
       <main className="flex-1 overflow-y-auto p-6">
+        <CockpitBar />
         <ActiveModuleComponent />
       </main>
     </div>
