@@ -33,3 +33,8 @@ S'appliquent à tout le texte que tu produis : commentaires de code, README, tex
 - Mots et expressions bannis : révolutionnaire, innovant, puissant, robuste, seamless, game-changer, plonger au cœur, dans un monde où, à l'ère de, il est important de noter, il convient de souligner, n'hésitez pas.
 - Phrases courtes, ton direct, aucun superlatif marketing.
 - Messages de commit : jamais de ligne Co-Authored-By ni de mention d'un assistant.
+
+## Git
+- Tu peux faire git add sur les fichiers concernés, demande confirmation pour git add .
+- Tu ne fais jamais git commit ni git push. Tu me proposes le message de commit, je le lance moi-même.
+- Messages de commit : jamais de ligne Co-Authored-By ni de mention d'un assistant.
