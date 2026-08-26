@@ -55,8 +55,8 @@ function buildFilename(title: string): string {
 }
 
 // Les nombres formatés en français (formatMoney/formatNumber) utilisent une espace fine insécable
-// (caractère U+202F) comme séparateur de milliers — la bonne typographie à l'écran, mais la police
-// standard de jsPDF (Helvetica, encodage WinAnsi) ne sait pas l'afficher et la remplace par un "/".
+// (caractère U+202F) comme séparateur de milliers. C'est la bonne typographie à l'écran, mais la
+// police standard de jsPDF (Helvetica, encodage WinAnsi) ne sait pas l'afficher et la remplace par un "/".
 // On la remplace ici par une espace normale, UNIQUEMENT pour ce qui part dans le PDF : l'affichage à
 // l'écran (formatMoney/formatNumber eux-mêmes) garde la vraie espace fine, plus correcte.
 function cleanPdfText(text: string): string {

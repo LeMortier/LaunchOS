@@ -1,4 +1,4 @@
-// Le diagramme de Sankey (le graphique en "flux" du funnel) — l'élément le plus impressionnant du
+// Le diagramme de Sankey (le graphique en "flux" du funnel) est l'élément le plus impressionnant du
 // produit, donc traité en "héros" : grand, animé à l'apparition, couleurs de canal fidèles. Extrait
 // de SankeyFunnel.tsx dans son propre composant pour pouvoir être réutilisé tel quel par le PDF
 // Export (qui a besoin d'afficher exactement le même diagramme, hors écran, pour le capturer en image).

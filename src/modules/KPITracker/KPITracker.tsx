@@ -1,4 +1,4 @@
-// Module 3 — KPI Tracker : ça compare, semaine après semaine, ce qu'on visait (objectif) à ce qu'on
+// KPI Tracker (module 3) : ça compare, semaine après semaine, ce qu'on visait (objectif) à ce qu'on
 // a vraiment obtenu (réel), pour suivre la progression du lancement sous forme de courbes.
 import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
@@ -181,8 +181,8 @@ export default function KPITracker() {
               className="rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink w-24"
             />
           </label>
-          {/* "Ajouter" est la seule action de ce bloc, donc c'est elle qui porte l'ambre —
-              pas de couleur décorative ailleurs dans le formulaire. */}
+          {/* "Ajouter" est la seule action de ce bloc, donc c'est elle qui porte l'ambre.
+              Pas de couleur décorative ailleurs dans le formulaire. */}
           <button
             type="submit"
             className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-canvas hover:bg-accent/90 transition-colors"

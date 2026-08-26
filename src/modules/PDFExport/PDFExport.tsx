@@ -1,4 +1,4 @@
-// Module 6 : PDF Export — le rapport consolidé qui résume tout ce qui a été fait dans les 5 autres modules.
+// Module 6 : PDF Export, le rapport consolidé qui résume tout ce qui a été fait dans les 5 autres modules.
 // Le formulaire et le résumé chiffré écrivent/lisent le store partagé comme les autres modules. Le
 // bouton "Générer le PDF" appelle generateReport.ts (jsPDF + html-to-image) pour assembler un vrai
 // fichier PDF téléchargeable à partir de ces mêmes données.

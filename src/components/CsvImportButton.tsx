@@ -53,7 +53,7 @@ export function CsvImportButton<T>({
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {/* Bouton d'import : une action secondaire (chaque module a son propre bouton d'action
-          principal ailleurs), donc style neutre — pas de ambre ici, juste un survol qui le fait
+          principal ailleurs), donc style neutre, sans ambre. Juste un survol qui le fait
           ressortir un peu. */}
       <button
         type="button"

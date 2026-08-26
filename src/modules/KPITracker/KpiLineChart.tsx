@@ -1,6 +1,6 @@
 // La courbe "réel vs objectif" pour UNE métrique, extraite de KPITracker.tsx dans son propre
-// composant pour pouvoir être réutilisée telle quelle par le PDF Export (qui affiche, lui, toutes
-// les métriques les unes sous les autres plutôt qu'une seule à la fois — voir KpiMetricsCharts.tsx).
+// composant pour pouvoir être réutilisée telle quelle par le PDF Export : il affiche, lui, toutes
+// les métriques les unes sous les autres plutôt qu'une seule à la fois (voir KpiMetricsCharts.tsx).
 import {
   CartesianGrid,
   Legend,
@@ -23,8 +23,8 @@ interface KpiLineChartProps {
 
 export function KpiLineChart({ data, height = 260, variant = 'dark' }: KpiLineChartProps) {
   // recharts prend ses couleurs par des props JS (pas des classes Tailwind), donc on fixe des
-  // couleurs explicites selon la variante plutôt que de compter sur l'héritage CSS — pour être sûr
-  // que ça reste lisible aussi bien à l'écran (fond sombre) que dans le PDF (fond blanc forcé).
+  // couleurs explicites selon la variante plutôt que de compter sur l'héritage CSS. Comme ça, c'est
+  // sûr que ça reste lisible aussi bien à l'écran (fond sombre) que dans le PDF (fond blanc forcé).
   const isLight = variant === 'light';
   const gridStroke = isLight ? '#e5e5e5' : '#253449';
   const axisStroke = isLight ? '#737373' : '#8a9bb0';

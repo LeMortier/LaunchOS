@@ -15,7 +15,7 @@
   --color-alert: #e5677e; /* pour signaler un risque élevé ou une valeur hors objectif */
 
   /* Les couleurs de canal : toujours les mêmes, partout où un canal apparaît (donut, Sankey,
-     tableaux, PDF) — voir CHANNEL_COLORS dans store/types.ts, qui reprend exactement ces teintes. */
+     tableaux, PDF). Voir CHANNEL_COLORS dans store/types.ts, qui reprend exactement ces teintes. */
   --color-channel-seo: #5b8def;
   --color-channel-ads: #e5677e;
   --color-channel-influence: #b48af0;
@@ -23,7 +23,7 @@
 
   /* 3 polices, 3 rôles : Archivo Expanded pour les titres et les chiffres clés (le "display"), IBM
      Plex Sans pour le texte courant, IBM Plex Mono pour TOUS les nombres (montants, taux, scores,
-     ROAS) — le mono aligne les colonnes de chiffres, ce qui rend les tableaux beaucoup plus lisibles. */
+     ROAS). Le mono aligne les colonnes de chiffres, ce qui rend les tableaux beaucoup plus lisibles. */
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Archivo Expanded", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
