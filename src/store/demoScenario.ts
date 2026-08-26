@@ -106,7 +106,7 @@ export const DEMO_SCENARIO: LaunchState = {
   kpiEntries,
   gtmTasks,
   reportMeta: {
-    title: 'Rapport de lancement — Gamme éco-responsable',
+    title: 'Rapport de lancement de la gamme éco-responsable',
     subtitle: 'Bilan go-to-market T1 2026',
     preparedBy: 'Matthieu Mortier',
   },

@@ -243,7 +243,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
       if (tasks.length === 0) continue;
       drawSubheading(GTM_PHASE_LABELS[phaseKey]);
       for (const task of tasks) {
-        drawWrappedText(`•  ${task.title} — jour ${task.startDay}, durée ${task.durationDays} jour(s)`, 8);
+        drawWrappedText(`•  ${task.title}, jour ${task.startDay}, durée ${task.durationDays} jour(s)`, 8);
       }
       cursor.y += 8;
     }
