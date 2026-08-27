@@ -87,10 +87,14 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
   const cursor = { y: PAGE_MARGIN };
 
   // Passe à la page suivante si ce qu'on s'apprête à dessiner ne tient plus dans la page courante.
-  const ensureSpace = (neededHeight: number) => {
+  // onPageBreak (optionnel) permet à l'appelant de redessiner quelque chose en haut de la nouvelle
+  // page juste après le saut, avant de continuer : utilisé par drawTable ci-dessous pour répéter la
+  // ligne d'en-tête des colonnes quand un tableau déborde sur une nouvelle page.
+  const ensureSpace = (neededHeight: number, onPageBreak?: () => void) => {
     if (cursor.y + neededHeight > pageHeight - PAGE_MARGIN) {
       doc.addPage();
       cursor.y = PAGE_MARGIN;
+      onPageBreak?.();
     }
   };
 
@@ -141,28 +145,62 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
 
   // Un tableau très simple, dessiné à la main (en-tête en gras + une ligne de séparation, puis
   // chaque ligne de données colonne par colonne) : pas besoin d'une librairie de tableau pour ça.
-  const drawTable = (headers: string[], rows: string[][], columnWidths: number[]) => {
+  // sectionTitle ne sert qu'au rappel "(suite)" plus bas, quand le tableau déborde sur une nouvelle page.
+  const drawTable = (sectionTitle: string, headers: string[], rows: string[][], columnWidths: number[]) => {
     const rowHeight = 16;
-    ensureSpace(rowHeight * 2);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(120, 120, 120);
-    let x = PAGE_MARGIN;
-    headers.forEach((header, i) => {
-      pdfText(header, x, cursor.y);
-      x += columnWidths[i];
-    });
-    cursor.y += 6;
-    doc.setDrawColor(210);
-    doc.line(PAGE_MARGIN, cursor.y, PAGE_MARGIN + columnWidths.reduce((a, b) => a + b, 0), cursor.y);
-    cursor.y += 14;
+    const headerHeight = 20; // hauteur réellement utilisée par drawHeaderRow ci-dessous (6 + 14)
+
+    // Dessine la ligne d'en-tête des colonnes. Appelée une première fois avant la première ligne de
+    // données, puis rappelée en haut de chaque nouvelle page tant que le tableau continue : sans ça,
+    // une page de continuation n'affiche que des chiffres sans dire à quelle colonne ils correspondent.
+    const drawHeaderRow = () => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(120, 120, 120);
+      let x = PAGE_MARGIN;
+      headers.forEach((header, i) => {
+        pdfText(header, x, cursor.y);
+        x += columnWidths[i];
+      });
+      cursor.y += 6;
+      doc.setDrawColor(210);
+      doc.line(PAGE_MARGIN, cursor.y, PAGE_MARGIN + columnWidths.reduce((a, b) => a + b, 0), cursor.y);
+      cursor.y += 14;
+    };
+
+    // Rappel discret en haut d'une page de continuation ("KPI Tracker (suite)", par ex.) : même
+    // police que les titres de section (drawSectionTitle plus haut), mais plus petite et plus pâle,
+    // pour rester secondaire par rapport à un vrai titre de section. N'est appelé QUE depuis le
+    // onPageBreak de la boucle ci-dessous, jamais avant la première ligne : il n'apparaît donc
+    // jamais sur la première page d'un tableau, seulement sur celles qui suivent.
+    const drawContinuationReminder = () => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(140, 140, 140);
+      pdfText(`${sectionTitle} (suite)`, PAGE_MARGIN, cursor.y);
+      cursor.y += 18;
+    };
+
+    // On réserve la place de l'en-tête ET d'au moins une ligne de données : sans le "+ rowHeight",
+    // l'en-tête pourrait se retrouver seul en bas d'une page, avec toutes les lignes qui basculent
+    // sur la suivante (où il serait certes redessiné, mais avec un en-tête orphelin juste au-dessus).
+    ensureSpace(headerHeight + rowHeight);
+    drawHeaderRow();
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(45, 45, 45);
     for (const row of rows) {
-      ensureSpace(rowHeight);
-      x = PAGE_MARGIN;
+      ensureSpace(rowHeight, () => {
+        drawContinuationReminder();
+        drawHeaderRow();
+        // drawHeaderRow change la police/couleur pour l'en-tête : on revient au style des lignes de
+        // données avant de dessiner la suite du tableau.
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(45, 45, 45);
+      });
+      let x = PAGE_MARGIN;
       row.forEach((cell, i) => {
         pdfText(cell, x, cursor.y);
         x += columnWidths[i];
@@ -258,6 +296,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     drawEmptyState();
   } else {
     drawTable(
+      'Budget Allocator',
       ['Canal', 'Budget'],
       [
         ...channelBudgets.map((b) => [CHANNEL_LABELS[b.channel], formatMoney(b.amount)]),
@@ -277,6 +316,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
   } else {
     await drawCapturedImage(captureElements.kpiCharts, 420);
     drawTable(
+      'KPI Tracker',
       ['Semaine', 'Métrique', 'Réel', 'Objectif'],
       kpiEntries.map((entry) => [entry.week, entry.metric, String(entry.actual), String(entry.target)]),
       [90, 200, 100, 100],
@@ -297,6 +337,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     pdfText(`Score de risque global : ${formatNumber(globalScore)} / 10`, PAGE_MARGIN, cursor.y);
     cursor.y += 28;
     drawTable(
+      'Risk Scorer',
       ['Critère', 'Score', 'Poids'],
       riskCriteria.map((c) => [c.label, `${c.score} / 10`, `${Math.round(c.weight * 100)}%`]),
       [260, 100, 100],
@@ -317,6 +358,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     await drawCapturedImage(captureElements.sankeyDiagram, 320, { width: 820, height: 460 });
     const totals = computeFunnelTotals(funnelRows);
     drawTable(
+      'Sankey Funnel & ROAS',
       ['Canal', 'Clics', 'Leads', 'Clients', 'Revenu', 'ROAS'],
       [
         ...funnelRows.map((row) => [
