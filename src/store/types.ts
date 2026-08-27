@@ -12,7 +12,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   seo: 'SEO',
   ads: 'Ads',
   influence: 'Influence',
-  pr: 'PR',
+  pr: 'Public Relations',
 };
 
 // Une couleur par canal, utilisée PARTOUT où un canal est affiché visuellement (le donut chart du
