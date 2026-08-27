@@ -19,7 +19,7 @@ export interface ModuleMeta {
 }
 
 export const MODULES: ModuleMeta[] = [
-  { id: 'gtm-canvas', label: 'GTM Canvas', description: 'Timeline drag & drop des phases de lancement' },
+  { id: 'gtm-canvas', label: 'GTM Canvas', description: 'Timeline des tâches par phase de lancement' },
   { id: 'budget-allocator', label: 'Budget Allocator', description: 'Répartition du budget par canal' },
   { id: 'kpi-tracker', label: 'KPI Tracker', description: 'Courbes de progression hebdo vs objectifs' },
   { id: 'risk-scorer', label: 'Risk Scorer', description: 'Score de risque sur 10 critères' },
