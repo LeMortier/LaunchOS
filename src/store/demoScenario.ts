@@ -25,14 +25,14 @@ const funnelConfigs: ChannelFunnelConfig[] = [
 const riskCriteria: RiskCriterion[] = [
   { id: 'demo-risk-concurrence', label: 'Concurrence', score: 7, weight: 0.1 },
   { id: 'demo-risk-time-to-market', label: 'Time-to-market', score: 6, weight: 0.1 },
-  { id: 'demo-risk-budget-marketing', label: 'Budget marketing', score: 5, weight: 0.1 },
-  { id: 'demo-risk-adequation-produit-marche', label: 'Adéquation produit-marché', score: 3, weight: 0.1 },
-  { id: 'demo-risk-dependance-fournisseurs', label: 'Dépendance fournisseurs', score: 4, weight: 0.1 },
+  { id: 'demo-risk-budget-marketing', label: "Risque de sous-financement de l'acquisition", score: 5, weight: 0.1 },
+  { id: 'demo-risk-adequation-produit-marche', label: 'Risque de rejet par le marché', score: 3, weight: 0.1 },
+  { id: 'demo-risk-dependance-fournisseurs', label: "Risque de défaillance de la chaîne d'approvisionnement", score: 4, weight: 0.1 },
   { id: 'demo-risk-complexite-technique', label: 'Complexité technique', score: 8, weight: 0.1 },
   { id: 'demo-risk-reglementaire', label: 'Risque réglementaire', score: 3, weight: 0.1 },
-  { id: 'demo-risk-solidite-equipe', label: 'Solidité équipe', score: 2, weight: 0.1 },
-  { id: 'demo-risk-tresorerie', label: 'Risque trésorerie', score: 6, weight: 0.1 },
-  { id: 'demo-risk-reputation-marque', label: 'Réputation marque', score: 4, weight: 0.1 },
+  { id: 'demo-risk-solidite-equipe', label: 'Risque de déficit de compétences', score: 2, weight: 0.1 },
+  { id: 'demo-risk-tresorerie', label: "Risque d'épuisement de la trésorerie", score: 6, weight: 0.1 },
+  { id: 'demo-risk-reputation-marque', label: "Risque d'atteinte à l'image de marque", score: 4, weight: 0.1 },
 ];
 
 // 3 indicateurs suivis sur 8 semaines, réel vs objectif (KPI Tracker).

@@ -294,7 +294,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor(23, 23, 23);
-    pdfText(`Score de risque global : ${globalScore.toFixed(1)} / 10`, PAGE_MARGIN, cursor.y);
+    pdfText(`Score de risque global : ${formatNumber(globalScore)} / 10`, PAGE_MARGIN, cursor.y);
     cursor.y += 28;
     drawTable(
       ['Critère', 'Score', 'Poids'],

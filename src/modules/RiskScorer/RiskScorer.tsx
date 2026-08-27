@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import type { RiskCriterion } from '../../store/types';
 import { CsvImportButton } from '../../components/CsvImportButton';
+import { formatNumber } from '../../store/formatters';
 
 // Les 10 critères de départ, avec une note neutre (5/10) et un poids égal pour chacun (0.1 x 10 = 1).
 // On les met ici plutôt que dans le store partagé (types.ts) car ce sont juste des valeurs de démarrage
@@ -12,14 +13,14 @@ import { CsvImportButton } from '../../components/CsvImportButton';
 const DEFAULT_CRITERIA: RiskCriterion[] = [
   { id: 'concurrence', label: 'Concurrence', score: 5, weight: 0.1 },
   { id: 'time-to-market', label: 'Time-to-market', score: 5, weight: 0.1 },
-  { id: 'budget-marketing', label: 'Budget marketing', score: 5, weight: 0.1 },
-  { id: 'adequation-produit-marche', label: 'Adéquation produit-marché', score: 5, weight: 0.1 },
-  { id: 'dependance-fournisseurs', label: 'Dépendance fournisseurs', score: 5, weight: 0.1 },
+  { id: 'budget-marketing', label: "Risque de sous-financement de l'acquisition", score: 5, weight: 0.1 },
+  { id: 'adequation-produit-marche', label: 'Risque de rejet par le marché', score: 5, weight: 0.1 },
+  { id: 'dependance-fournisseurs', label: "Risque de défaillance de la chaîne d'approvisionnement", score: 5, weight: 0.1 },
   { id: 'complexite-technique', label: 'Complexité technique', score: 5, weight: 0.1 },
   { id: 'risque-reglementaire', label: 'Risque réglementaire / légal', score: 5, weight: 0.1 },
-  { id: 'solidite-equipe', label: "Solidité de l'équipe", score: 5, weight: 0.1 },
-  { id: 'tresorerie', label: 'Risque de trésorerie', score: 5, weight: 0.1 },
-  { id: 'reputation-marque', label: 'Réputation de marque', score: 5, weight: 0.1 },
+  { id: 'solidite-equipe', label: 'Risque de déficit de compétences', score: 5, weight: 0.1 },
+  { id: 'tresorerie', label: "Risque d'épuisement de la trésorerie", score: 5, weight: 0.1 },
+  { id: 'reputation-marque', label: "Risque d'atteinte à l'image de marque", score: 5, weight: 0.1 },
 ];
 
 // Les colonnes attendues dans le CSV importé/exporté pour ce module.
@@ -29,8 +30,8 @@ const CSV_HEADERS = ['id', 'label', 'score', 'weight'];
 const CSV_SAMPLE_ROWS = [
   ['concurrence', 'Concurrence', '7', '0.15'],
   ['time-to-market', 'Time-to-market', '4', '0.1'],
-  ['budget-marketing', 'Budget marketing', '3', '0.1'],
-  ['adequation-produit-marche', 'Adéquation produit-marché', '6', '0.2'],
+  ['budget-marketing', "Risque de sous-financement de l'acquisition", '3', '0.1'],
+  ['adequation-produit-marche', 'Risque de rejet par le marché', '6', '0.2'],
 ];
 
 export default function RiskScorer() {
@@ -102,7 +103,7 @@ export default function RiskScorer() {
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-muted">Score de risque global</span>
           <span className={`font-mono text-3xl font-semibold tabular-nums transition-all duration-500 ${scoreColorClass}`}>
-            {globalScore.toFixed(1)} <span className="text-base text-muted">/ 10</span>
+            {formatNumber(globalScore)} <span className="text-base text-muted">/ 10</span>
           </span>
         </div>
         <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-border">
