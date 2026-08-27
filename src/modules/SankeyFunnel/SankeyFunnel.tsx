@@ -19,6 +19,8 @@ export default function SankeyFunnel() {
   // Lecture + écriture : les hypothèses de conversion propres à ce module.
   const funnelConfigs = useLaunchStore((state) => state.funnelConfigs);
   const setFunnelConfigs = useLaunchStore((state) => state.setFunnelConfigs);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // Met à jour un seul champ (ex: costPerClick) pour un canal donné, puis renvoie le tableau complet
   // au store via setFunnelConfigs (comme demandé : on reconstruit toute la liste avec l'entrée modifiée).
@@ -91,6 +93,7 @@ export default function SankeyFunnel() {
       <div className="bg-surface border border-border rounded-lg p-6">
         <h3 className="mb-3 text-sm font-semibold text-ink">Import des hypothèses</h3>
         <CsvImportButton<ChannelFunnelConfig>
+          key={resetGeneration}
           label="Importer les hypothèses (CSV)"
           templateFilename="sankey-funnel-template.csv"
           templateHeaders={['channel', 'costPerClick', 'clickToLeadRate', 'leadToCustomerRate', 'avgRevenuePerCustomer']}

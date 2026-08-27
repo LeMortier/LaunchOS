@@ -46,6 +46,8 @@ export default function BudgetAllocator() {
   const channelBudgets = useLaunchStore((state) => state.channelBudgets);
   const setChannelBudget = useLaunchStore((state) => state.setChannelBudget);
   const setChannelBudgets = useLaunchStore((state) => state.setChannelBudgets);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // Petit raccourci pour retrouver le montant d'un canal donné (0 si rien n'a encore été saisi).
   const getAmount = (channel: Channel): number =>
@@ -63,6 +65,7 @@ export default function BudgetAllocator() {
       {/* Import/export CSV, branché directement sur setChannelBudgets pour remplacer toute la
           liste des budgets d'un coup avec le contenu du fichier. */}
       <CsvImportButton<ChannelBudget>
+        key={resetGeneration}
         label="Importer un budget CSV"
         templateFilename="budget-template.csv"
         templateHeaders={['channel', 'amount']}

@@ -24,6 +24,8 @@ export default function PDFExport() {
   const kpiEntries = useLaunchStore((state) => state.kpiEntries);
   const riskCriteria = useLaunchStore((state) => state.riskCriteria);
   const funnelConfigs = useLaunchStore((state) => state.funnelConfigs);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // Le budget total, tous canaux confondus (Budget Allocator).
   const totalBudget = channelBudgets.reduce((sum, budget) => sum + budget.amount, 0);
@@ -128,6 +130,7 @@ export default function PDFExport() {
 
         {/* Import CSV alternatif au formulaire : une seule ligne dans le fichier suffit, elle remplace tout reportMeta. */}
         <CsvImportButton<ReportMeta>
+          key={resetGeneration}
           label="Importer les infos du rapport (CSV)"
           templateFilename="report-meta-template.csv"
           templateHeaders={['title', 'subtitle', 'preparedBy']}

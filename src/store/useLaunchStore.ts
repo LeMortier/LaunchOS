@@ -56,6 +56,20 @@ interface LaunchStore {
   // de démo" de la Sidebar), et remet tout à zéro (utilisé par le bouton "Réinitialiser" à côté).
   loadLaunchState: (data: LaunchState) => void;
   resetLaunchState: () => void;
+
+  // Un compteur qui ne sert PAS à afficher quoi que ce soit : il existe juste pour forcer certains
+  // composants à se "remonter" (se détruire et se recréer depuis zéro) quand tout le lancement est
+  // écrasé d'un coup. Exemple concret : CsvImportButton affiche un message après un import ("3
+  // lignes importées", ou une erreur). Si les données sont ensuite écrasées par un AUTRE chemin
+  // (loadLaunchState/resetLaunchState) sans que ce bouton le sache, son message reste affiché à
+  // côté de données qui n'ont plus rien à voir. Chaque module donne resetGeneration à CsvImportButton
+  // comme "key" React (l'identifiant qui dit à React "si cette valeur change, recrée le composant
+  // depuis zéro") : React jette alors l'ancien composant et son message avec, sans que CsvImportButton
+  // ait besoin de connaître les données du module. Il n'est incrémenté QUE dans loadLaunchState et
+  // resetLaunchState, jamais ailleurs : une action normale d'un module (un import réussi, une saisie
+  // manuelle...) ne doit jamais déclencher ce remontage, sinon on perdrait aussi les messages qui
+  // viennent tout juste de s'afficher suite à un import réel.
+  resetGeneration: number;
 }
 
 // Les seuls champs qu'on sauvegarde réellement dans le localStorage : uniquement les données, jamais
@@ -159,17 +173,21 @@ export const useLaunchStore = create<LaunchStore>()(
       setReportMeta: (reportMeta) => set({ reportMeta }),
 
       // Un seul "set" pour les 6 modules à la fois : un seul re-rendu, une seule écriture dans le
-      // localStorage, plutôt que 6 appels séparés.
-      loadLaunchState: (data) => set(data),
+      // localStorage, plutôt que 6 appels séparés. On incrémente aussi resetGeneration (voir sa
+      // définition plus haut) pour forcer le remontage des CsvImportButton.
+      loadLaunchState: (data) =>
+        set((state) => ({ ...data, resetGeneration: state.resetGeneration + 1 })),
       resetLaunchState: () =>
-        set({
+        set((state) => ({
           channelBudgets: defaultChannelBudgets,
           gtmTasks: [],
           kpiEntries: [],
           riskCriteria: [],
           funnelConfigs: defaultFunnelConfigs,
           reportMeta: defaultReportMeta,
-        }),
+          resetGeneration: state.resetGeneration + 1,
+        })),
+      resetGeneration: 0,
     }),
     {
       // Le nom de la clé utilisée dans le localStorage du navigateur.

@@ -29,6 +29,8 @@ export default function KPITracker() {
   const kpiEntries = useLaunchStore((state) => state.kpiEntries);
   const setKpiEntries = useLaunchStore((state) => state.setKpiEntries);
   const upsertKpiEntry = useLaunchStore((state) => state.upsertKpiEntry);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // "state" (donnée locale au composant, qui redessine l'écran quand elle change) pour le formulaire
   // d'ajout manuel et pour la métrique choisie dans le graphique.
@@ -92,6 +94,7 @@ export default function KPITracker() {
       {/* Import/export CSV : branché directement sur setKpiEntries, tout le fichier remplace la liste actuelle. */}
       <div className="bg-surface border border-border rounded-lg p-6">
         <CsvImportButton<KPIWeeklyEntry>
+          key={resetGeneration}
           label="Importer les KPI (CSV)"
           templateFilename="kpi-template.csv"
           templateHeaders={['id', 'week', 'metric', 'actual', 'target']}

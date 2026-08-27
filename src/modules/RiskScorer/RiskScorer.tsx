@@ -41,6 +41,8 @@ export default function RiskScorer() {
   const riskCriteria = useLaunchStore((state) => state.riskCriteria);
   const setRiskCriteria = useLaunchStore((state) => state.setRiskCriteria);
   const updateRiskCriterionScore = useLaunchStore((state) => state.updateRiskCriterionScore);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // Au tout premier affichage, si personne n'a encore rempli le questionnaire (store vide),
   // on initialise avec nos 10 critères par défaut, notés à 5/10 chacun (position neutre).
@@ -141,6 +143,7 @@ export default function RiskScorer() {
       {/* Import CSV : remplace tout le questionnaire d'un coup avec un fichier externe (colonnes
           id, label, score, weight). Le composant est partagé par tous les modules de LaunchOS. */}
       <CsvImportButton<RiskCriterion>
+        key={resetGeneration}
         label="Importer le questionnaire (CSV)"
         templateFilename="risk-scorer-template.csv"
         templateHeaders={CSV_HEADERS}

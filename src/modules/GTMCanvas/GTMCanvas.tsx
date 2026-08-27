@@ -30,6 +30,8 @@ export default function GTMCanvas() {
   const setGtmTasks = useLaunchStore((state) => state.setGtmTasks);
   const upsertGtmTask = useLaunchStore((state) => state.upsertGtmTask);
   const removeGtmTask = useLaunchStore((state) => state.removeGtmTask);
+  // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
+  const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
   // "state" local (une donnée propre à ce composant, qui redessine l'écran quand elle change)
   // pour le petit formulaire d'ajout manuel de tâche.
@@ -89,6 +91,7 @@ export default function GTMCanvas() {
           et l'ensemble remplace la liste actuelle des tâches (setGtmTasks). */}
       <div className="bg-surface border border-border rounded-lg p-6">
         <CsvImportButton<GTMTask>
+          key={resetGeneration}
           label="Importer les tâches (CSV)"
           templateFilename="gtm-tasks-template.csv"
           templateHeaders={['id', 'title', 'phase', 'startDay', 'durationDays']}
