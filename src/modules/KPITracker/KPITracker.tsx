@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import type { KPIWeeklyEntry } from '../../store/types';
+import { clampToRange, KPI_VALUE_MIN } from '../../store/numberBounds';
 import { KpiLineChart } from './KpiLineChart';
 
 // Fabrique un identifiant unique pour une nouvelle ligne. Utilisé par le formulaire manuel,
@@ -70,6 +71,19 @@ export default function KPITracker() {
     };
     upsertKpiEntry(entry);
     setForm(emptyForm); // on vide le formulaire pour la prochaine saisie
+  };
+
+  // À la sortie du champ (onBlur), on ramène une valeur négative à 0, sans message d'erreur (voir
+  // clampToRange dans store/numberBounds.ts). Un champ vidé reste vide : c'est handleSubmit qui
+  // retombe sur 0 au moment d'ajouter, pas ce blur-là, sinon impossible de le laisser vide le temps
+  // de finir de remplir le reste du formulaire.
+  const handleActualBlur = () => {
+    if (form.actual.trim() === '') return;
+    setForm({ ...form, actual: String(clampToRange(Number(form.actual), KPI_VALUE_MIN, Infinity)) });
+  };
+  const handleTargetBlur = () => {
+    if (form.target.trim() === '') return;
+    setForm({ ...form, target: String(clampToRange(Number(form.target), KPI_VALUE_MIN, Infinity)) });
   };
 
   // Transforme une ligne brute du CSV (que du texte) en vraie entrée KPI typée.
@@ -170,8 +184,10 @@ export default function KPITracker() {
             Réel
             <input
               type="number"
+              min={KPI_VALUE_MIN}
               value={form.actual}
               onChange={(event) => setForm({ ...form, actual: event.target.value })}
+              onBlur={handleActualBlur}
               className="rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink w-24"
             />
           </label>
@@ -179,8 +195,10 @@ export default function KPITracker() {
             Objectif
             <input
               type="number"
+              min={KPI_VALUE_MIN}
               value={form.target}
               onChange={(event) => setForm({ ...form, target: event.target.value })}
+              onBlur={handleTargetBlur}
               className="rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink w-24"
             />
           </label>
@@ -192,6 +210,13 @@ export default function KPITracker() {
           >
             Ajouter
           </button>
+          {/* Rappel discret des plages acceptées : utile puisque la correction se fait sans message
+              d'erreur, juste en ramenant la valeur à la limite la plus proche à la sortie du champ.
+              "w-full" pour prendre sa propre ligne dans ce formulaire qui wrap (flex-wrap). */}
+          <p className="w-full text-xs text-muted">
+            Réel et Objectif : jamais négatifs. Une valeur hors limites est ramenée automatiquement
+            à la limite la plus proche.
+          </p>
         </form>
       </div>
 

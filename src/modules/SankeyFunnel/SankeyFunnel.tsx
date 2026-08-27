@@ -6,10 +6,24 @@
 // de 3 veut dire que chaque euro dépensé en rapporte 3.
 // C'est la preuve concrète que les modules communiquent entre eux : ce module ne fait QUE lire le budget
 // (jamais le modifier), et le Budget Allocator n'a pas besoin de savoir que le Sankey Funnel existe.
+import { useState } from 'react';
 import { CHANNELS, CHANNEL_LABELS, type Channel, type ChannelFunnelConfig } from '../../store/types';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { CsvImportButton } from '../../components/CsvImportButton';
-import { formatCount, formatMoney, formatNumber } from '../../store/formatters';
+import {
+  formatCount,
+  formatEditableNumber,
+  formatMoney,
+  formatNumber,
+  parseEditableNumber,
+} from '../../store/formatters';
+import {
+  clampToRange,
+  CONVERSION_RATE_MAX,
+  CONVERSION_RATE_MIN,
+  COST_PER_CLICK_MIN,
+  REVENUE_PER_CUSTOMER_MIN,
+} from '../../store/numberBounds';
 import { computeFunnelRows, computeFunnelTotals, emptyFunnelConfig } from './funnelMath';
 import { SankeyDiagram } from './SankeyDiagram';
 
@@ -21,6 +35,23 @@ export default function SankeyFunnel() {
   const setFunnelConfigs = useLaunchStore((state) => state.setFunnelConfigs);
   // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
   const resetGeneration = useLaunchStore((state) => state.resetGeneration);
+
+  // Les 4 champs hypothèses sont des <input type="text"> (pas type="number", voir le commentaire de
+  // formatEditableNumber dans store/formatters.ts) : ça nous laisse choisir nous-mêmes l'affichage
+  // (virgule française), plutôt que de dépendre de l'habillage du navigateur qui disparaît après le
+  // premier blur. Tant qu'on est en train de taper dans un champ, on affiche exactement ce texte-là
+  // (même incomplet, ex: "0,"), identifié par "canal:champ" ; dès qu'on quitte le champ, l'entrée est
+  // retirée et l'affichage repart de la valeur (éventuellement corrigée) du store.
+  const [editingText, setEditingText] = useState<Record<string, string>>({});
+  const fieldKey = (channel: Channel, field: string) => `${channel}:${field}`;
+
+  // Le texte à afficher dans un champ hypothèse : ce qui est en train d'être tapé s'il y a une saisie
+  // en cours sur ce champ précis, sinon la valeur du store, formatée en français.
+  const displayValue = (
+    channel: Channel,
+    field: keyof Omit<ChannelFunnelConfig, 'channel'>,
+    storeValue: number,
+  ) => editingText[fieldKey(channel, field)] ?? formatEditableNumber(storeValue);
 
   // Met à jour un seul champ (ex: costPerClick) pour un canal donné, puis renvoie le tableau complet
   // au store via setFunnelConfigs (comme demandé : on reconstruit toute la liste avec l'entrée modifiée).
@@ -36,6 +67,46 @@ export default function SankeyFunnel() {
       ? funnelConfigs.map((c) => (c.channel === channel ? updated : c))
       : [...funnelConfigs, updated];
     setFunnelConfigs(nextConfigs);
+  };
+
+  // À chaque frappe : on garde le texte tapé tel quel pour l'affichage (voir editingText plus haut),
+  // et si ça correspond déjà à un nombre valide (virgule ou point), on le pousse dans le store tout de
+  // suite, pour que le diagramme et le tableau de résultats se recalculent en direct comme avant.
+  // Un texte encore incomplet (ex: "0,") donne NaN : on ne touche pas au store tant que ce n'est pas
+  // exploitable, on laisse juste la personne finir de taper.
+  const handleFieldChange = (
+    channel: Channel,
+    field: keyof Omit<ChannelFunnelConfig, 'channel'>,
+    text: string,
+  ) => {
+    setEditingText((prev) => ({ ...prev, [fieldKey(channel, field)]: text }));
+    const parsed = parseEditableNumber(text);
+    if (!Number.isNaN(parsed)) {
+      updateField(channel, field, parsed);
+    }
+  };
+
+  // À la sortie du champ (onBlur, quand on quitte le champ), on ramène une valeur hors limites à la
+  // limite la plus proche, sans message d'erreur (voir clampToRange dans store/numberBounds.ts) : le
+  // store n'est réécrit QUE si la valeur clampée diffère vraiment de la valeur actuelle, pour ne pas
+  // réécrire inutilement une valeur déjà correcte. On efface ensuite le texte "en cours de saisie" :
+  // l'affichage repart de la valeur (corrigée ou non) du store, toujours reformatée en français.
+  const handleFieldBlur = (
+    channel: Channel,
+    field: keyof Omit<ChannelFunnelConfig, 'channel'>,
+    min: number,
+    max: number,
+  ) => {
+    const current = funnelConfigs.find((c) => c.channel === channel) ?? emptyFunnelConfig(channel);
+    const clamped = clampToRange(current[field], min, max);
+    if (clamped !== current[field]) {
+      updateField(channel, field, clamped);
+    }
+    setEditingText((prev) => {
+      const next = { ...prev };
+      delete next[fieldKey(channel, field)];
+      return next;
+    });
   };
 
   // Le calcul du funnel (clics -> leads -> clients -> revenu -> ROAS) vit dans funnelMath.ts, pour
@@ -127,43 +198,41 @@ export default function SankeyFunnel() {
                 <td className="py-2 pr-3 font-medium text-ink">{CHANNEL_LABELS[channel]}</td>
                 <td className="py-2 pr-3">
                   <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={config.costPerClick}
-                    onChange={(e) => updateField(channel, 'costPerClick', Number(e.target.value))}
+                    type="text"
+                    inputMode="decimal"
+                    value={displayValue(channel, 'costPerClick', config.costPerClick)}
+                    onChange={(e) => handleFieldChange(channel, 'costPerClick', e.target.value)}
+                    onBlur={() => handleFieldBlur(channel, 'costPerClick', COST_PER_CLICK_MIN, Infinity)}
                     className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
                   <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={config.clickToLeadRate}
-                    onChange={(e) => updateField(channel, 'clickToLeadRate', Number(e.target.value))}
+                    type="text"
+                    inputMode="decimal"
+                    value={displayValue(channel, 'clickToLeadRate', config.clickToLeadRate)}
+                    onChange={(e) => handleFieldChange(channel, 'clickToLeadRate', e.target.value)}
+                    onBlur={() => handleFieldBlur(channel, 'clickToLeadRate', CONVERSION_RATE_MIN, CONVERSION_RATE_MAX)}
                     className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
                   <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={config.leadToCustomerRate}
-                    onChange={(e) => updateField(channel, 'leadToCustomerRate', Number(e.target.value))}
+                    type="text"
+                    inputMode="decimal"
+                    value={displayValue(channel, 'leadToCustomerRate', config.leadToCustomerRate)}
+                    onChange={(e) => handleFieldChange(channel, 'leadToCustomerRate', e.target.value)}
+                    onBlur={() => handleFieldBlur(channel, 'leadToCustomerRate', CONVERSION_RATE_MIN, CONVERSION_RATE_MAX)}
                     className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
                 <td className="py-2 pr-3">
                   <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={config.avgRevenuePerCustomer}
-                    onChange={(e) => updateField(channel, 'avgRevenuePerCustomer', Number(e.target.value))}
+                    type="text"
+                    inputMode="decimal"
+                    value={displayValue(channel, 'avgRevenuePerCustomer', config.avgRevenuePerCustomer)}
+                    onChange={(e) => handleFieldChange(channel, 'avgRevenuePerCustomer', e.target.value)}
+                    onBlur={() => handleFieldBlur(channel, 'avgRevenuePerCustomer', REVENUE_PER_CUSTOMER_MIN, Infinity)}
                     className="w-24 rounded border border-border bg-canvas px-2 py-1 font-mono tabular-nums text-ink focus:border-accent"
                   />
                 </td>
@@ -171,6 +240,13 @@ export default function SankeyFunnel() {
             ))}
           </tbody>
         </table>
+        {/* Rappel discret des plages acceptées : utile puisque la correction se fait sans message
+            d'erreur, juste en ramenant la valeur à la limite la plus proche à la sortie du champ. */}
+        <p className="mt-3 text-xs text-muted">
+          Coût par clic : toujours au-dessus de 0. Taux de conversion : entre 0 et 1. Revenu par
+          client : jamais négatif. Une valeur hors limites est ramenée automatiquement à la limite
+          la plus proche.
+        </p>
       </div>
 
       {/* Le diagramme de Sankey : la vue "flux" du funnel. Chaque voie de couleur suit un canal du

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { GTM_PHASES, GTM_PHASE_LABELS, type GTMPhaseKey, type GTMTask } from '../../store/types';
+import { clampToRange, GTM_DURATION_MAX, GTM_DURATION_MIN, GTM_START_DAY_MIN } from '../../store/numberBounds';
 
 // Quelques lignes d'exemple réalistes, affichées dans le template CSV téléchargeable
 // pour montrer à l'utilisateur à quoi doit ressembler une ligne valide.
@@ -77,6 +78,19 @@ export default function GTMCanvas() {
     setDurationDays('1');
   };
 
+  // À la sortie du champ (onBlur), on ramène une valeur hors limites à la limite la plus proche,
+  // sans message d'erreur (voir clampToRange dans store/numberBounds.ts). Un champ vidé reste vide :
+  // c'est handleAddTask qui retombe sur une valeur par défaut au moment d'ajouter, pas ce blur-là,
+  // sinon impossible de vider le champ le temps de retaper autre chose.
+  const handleStartDayBlur = () => {
+    if (startDay.trim() === '') return;
+    setStartDay(String(clampToRange(Number(startDay), GTM_START_DAY_MIN, Infinity)));
+  };
+  const handleDurationDaysBlur = () => {
+    if (durationDays.trim() === '') return;
+    setDurationDays(String(clampToRange(Number(durationDays), GTM_DURATION_MIN, GTM_DURATION_MAX)));
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -140,8 +154,10 @@ export default function GTMCanvas() {
           <label className="text-xs text-muted">Jour de début</label>
           <input
             type="number"
+            min={GTM_START_DAY_MIN}
             value={startDay}
             onChange={(event) => setStartDay(event.target.value)}
+            onBlur={handleStartDayBlur}
             className="w-24 rounded border border-border bg-canvas px-2 py-1.5 text-sm font-mono tabular-nums text-ink focus:border-accent"
           />
         </div>
@@ -149,8 +165,11 @@ export default function GTMCanvas() {
           <label className="text-xs text-muted">Durée (jours)</label>
           <input
             type="number"
+            min={GTM_DURATION_MIN}
+            max={GTM_DURATION_MAX}
             value={durationDays}
             onChange={(event) => setDurationDays(event.target.value)}
+            onBlur={handleDurationDaysBlur}
             className="w-24 rounded border border-border bg-canvas px-2 py-1.5 text-sm font-mono tabular-nums text-ink focus:border-accent"
           />
         </div>
@@ -162,6 +181,13 @@ export default function GTMCanvas() {
         >
           Ajouter la tâche
         </button>
+        {/* Rappel discret des plages acceptées : utile puisque la correction se fait sans message
+            d'erreur, juste en ramenant la valeur à la limite la plus proche à la sortie du champ.
+            "w-full" pour prendre sa propre ligne dans ce formulaire qui wrap (flex-wrap). */}
+        <p className="w-full text-xs text-muted">
+          Jour de début : à partir de 0. Durée : entre 1 et 365 jours. Une valeur hors limites est
+          ramenée automatiquement à la limite la plus proche.
+        </p>
       </form>
 
       {/* TODO: brancher ici le vrai drag & drop avec @dnd-kit/core + @dnd-kit/sortable, pour pouvoir
