@@ -61,6 +61,16 @@ export default function GTMCanvas() {
   const [startDay, setStartDay] = useState('0');
   const [durationDays, setDurationDays] = useState('1');
 
+  // Formulaire de modification : mêmes 4 champs que le formulaire d'ajout, mais pour une tâche déjà
+  // existante. editingTaskId dit quelle tâche est en cours de modification (une seule à la fois, et
+  // null quand aucune) ; c'est ce qui bascule cette tâche-là de l'affichage normal vers le formulaire
+  // dans la liste plus bas.
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editPhase, setEditPhase] = useState<GTMPhaseKey>('pre-launch');
+  const [editStartDay, setEditStartDay] = useState('0');
+  const [editDurationDays, setEditDurationDays] = useState('1');
+
   // Regroupe les tâches par phase et les trie par jour de début, pour affichage en 3 colonnes.
   // useMemo évite de refaire ce tri à chaque rendu si les tâches n'ont pas changé.
   const tasksByPhase = useMemo(() => {
@@ -109,6 +119,49 @@ export default function GTMCanvas() {
   const handleDurationDaysBlur = () => {
     if (durationDays.trim() === '') return;
     setDurationDays(String(clampToRange(Number(durationDays), GTM_DURATION_MIN, GTM_DURATION_MAX)));
+  };
+
+  // Ouvre le formulaire de modification sur une tâche donnée, en pré-remplissant ses champs.
+  // Rappeler cette fonction pendant qu'une autre tâche est déjà en cours de modification abandonne
+  // silencieusement cette modification-là (pas de confirmation, comme demandé) et bascule sur la
+  // nouvelle.
+  const startEditingTask = (task: GTMTask) => {
+    setEditingTaskId(task.id);
+    setEditTitle(task.title);
+    setEditPhase(task.phase);
+    setEditStartDay(String(task.startDay));
+    setEditDurationDays(String(task.durationDays));
+  };
+
+  // Referme le formulaire de modification sans rien enregistrer.
+  const cancelEditingTask = () => setEditingTaskId(null);
+
+  // Enregistre la modification : upsertGtmTask remplace la tâche existante puisqu'on lui redonne le
+  // même id (voir sa définition dans useLaunchStore.ts), donc pas besoin d'une action séparée.
+  const handleSaveEdit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingTaskId || !editTitle.trim()) return;
+
+    upsertGtmTask({
+      id: editingTaskId,
+      title: editTitle.trim(),
+      phase: editPhase,
+      startDay: Number(editStartDay) || 0,
+      durationDays: Number(editDurationDays) || 1,
+    });
+
+    setEditingTaskId(null);
+  };
+
+  // Mêmes règles de correction que handleStartDayBlur/handleDurationDaysBlur ci-dessus, appliquées
+  // cette fois aux champs du formulaire de modification.
+  const handleEditStartDayBlur = () => {
+    if (editStartDay.trim() === '') return;
+    setEditStartDay(String(clampToRange(Number(editStartDay), GTM_START_DAY_MIN, Infinity)));
+  };
+  const handleEditDurationDaysBlur = () => {
+    if (editDurationDays.trim() === '') return;
+    setEditDurationDays(String(clampToRange(Number(editDurationDays), GTM_DURATION_MIN, GTM_DURATION_MAX)));
   };
 
   return (
@@ -222,25 +275,98 @@ export default function GTMCanvas() {
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {tasksByPhase[phaseKey].map((task) => (
-                  <li key={task.id} className="rounded border border-border bg-canvas p-2 text-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-ink">{task.title}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeGtmTask(task.id)}
-                        className="text-xs text-muted hover:text-alert transition-colors"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                    {/* Donnée numérique (jour de début + durée) : chiffres en font-mono/tabular-nums
-                        pour qu'ils s'alignent bien visuellement. */}
-                    <div className="mt-1 font-mono tabular-nums text-muted text-xs">
-                      Jour {task.startDay} · {task.durationDays} jour(s)
-                    </div>
-                  </li>
-                ))}
+                {tasksByPhase[phaseKey].map((task) =>
+                  editingTaskId === task.id ? (
+                    // Formulaire de modification : remplace l'affichage normal de CETTE tâche
+                    // uniquement, directement dans la liste (pas de popup). Mêmes bornes et mêmes
+                    // messages de correction que le formulaire d'ajout au-dessus.
+                    <li key={task.id} className="rounded border border-accent bg-canvas p-2 text-sm">
+                      <form onSubmit={handleSaveEdit} className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(event) => setEditTitle(event.target.value)}
+                          placeholder="Titre de la tâche"
+                          className="rounded border border-border bg-surface px-2 py-1 text-sm text-ink placeholder:text-muted focus:border-accent"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            value={editPhase}
+                            onChange={(event) => setEditPhase(event.target.value as GTMPhaseKey)}
+                            className="rounded border border-border bg-surface px-2 py-1 text-xs text-ink focus:border-accent"
+                          >
+                            {GTM_PHASES.map((key) => (
+                              <option key={key} value={key}>
+                                {GTM_PHASE_LABELS[key]}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            min={GTM_START_DAY_MIN}
+                            value={editStartDay}
+                            onChange={(event) => setEditStartDay(event.target.value)}
+                            onBlur={handleEditStartDayBlur}
+                            aria-label="Jour de début"
+                            className="w-16 rounded border border-border bg-surface px-2 py-1 text-xs font-mono tabular-nums text-ink focus:border-accent"
+                          />
+                          <input
+                            type="number"
+                            min={GTM_DURATION_MIN}
+                            max={GTM_DURATION_MAX}
+                            value={editDurationDays}
+                            onChange={(event) => setEditDurationDays(event.target.value)}
+                            onBlur={handleEditDurationDaysBlur}
+                            aria-label="Durée (jours)"
+                            className="w-16 rounded border border-border bg-surface px-2 py-1 text-xs font-mono tabular-nums text-ink focus:border-accent"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="submit"
+                            className="rounded bg-accent px-2 py-1 text-xs font-medium text-canvas transition-opacity hover:opacity-90"
+                          >
+                            Enregistrer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingTask}
+                            className="text-xs text-muted hover:text-ink transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </form>
+                    </li>
+                  ) : (
+                    <li key={task.id} className="rounded border border-border bg-canvas p-2 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-ink">{task.title}</span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditingTask(task)}
+                            className="text-xs text-muted hover:text-ink transition-colors"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeGtmTask(task.id)}
+                            className="text-xs text-muted hover:text-alert transition-colors"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                      {/* Donnée numérique (jour de début + durée) : chiffres en font-mono/tabular-nums
+                          pour qu'ils s'alignent bien visuellement. */}
+                      <div className="mt-1 font-mono tabular-nums text-muted text-xs">
+                        Jour {task.startDay} · {task.durationDays} jour(s)
+                      </div>
+                    </li>
+                  ),
+                )}
               </ul>
             )}
           </div>

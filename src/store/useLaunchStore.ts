@@ -40,6 +40,7 @@ interface LaunchStore {
   kpiEntries: KPIWeeklyEntry[];
   setKpiEntries: (entries: KPIWeeklyEntry[]) => void;
   upsertKpiEntry: (entry: KPIWeeklyEntry) => void;
+  removeKpiEntry: (id: string) => void;
 
   riskCriteria: RiskCriterion[];
   setRiskCriteria: (criteria: RiskCriterion[]) => void;
@@ -148,6 +149,7 @@ export const useLaunchStore = create<LaunchStore>()(
               : [...state.kpiEntries, entry],
           };
         }),
+      removeKpiEntry: (id) => set((state) => ({ kpiEntries: state.kpiEntries.filter((e) => e.id !== id) })),
 
       riskCriteria: [],
       setRiskCriteria: (riskCriteria) => set({ riskCriteria }),

@@ -30,6 +30,7 @@ export default function KPITracker() {
   const kpiEntries = useLaunchStore((state) => state.kpiEntries);
   const setKpiEntries = useLaunchStore((state) => state.setKpiEntries);
   const upsertKpiEntry = useLaunchStore((state) => state.upsertKpiEntry);
+  const removeKpiEntry = useLaunchStore((state) => state.removeKpiEntry);
   // Sert uniquement de "key" sur CsvImportButton plus bas (voir sa définition dans useLaunchStore.ts).
   const resetGeneration = useLaunchStore((state) => state.resetGeneration);
 
@@ -38,6 +39,12 @@ export default function KPITracker() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [selectedMetric, setSelectedMetric] = useState<string>('');
 
+  // Formulaire de modification : mêmes 4 champs que le formulaire d'ajout, mais pour une entrée déjà
+  // existante. editingEntryId dit quelle entrée est en cours de modification (une seule à la fois),
+  // et bascule cette ligne-là du tableau vers des champs de saisie plus bas.
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<FormState>(emptyForm);
+
   // La liste des métriques différentes présentes dans les entrées (ex: "Inscriptions", "MRR"...),
   // sans doublons, pour remplir le menu déroulant du graphique.
   const metrics = useMemo(() => {
@@ -45,8 +52,12 @@ export default function KPITracker() {
     return Array.from(unique);
   }, [kpiEntries]);
 
-  // La métrique réellement affichée : celle choisie dans le select, ou la première disponible par défaut.
-  const activeMetric = selectedMetric || metrics[0] || '';
+  // La métrique réellement affichée : celle choisie dans le select si elle existe encore parmi les
+  // entrées, sinon la première disponible. Le "si elle existe encore" compte : si on supprime (ou on
+  // renomme via modification) la dernière entrée de la métrique actuellement choisie, metrics ne la
+  // contient plus, et sans cette vérification le graphique resterait bloqué sur une métrique qui n'a
+  // plus aucune donnée au lieu de retomber sur une métrique qui en a.
+  const activeMetric = selectedMetric && metrics.includes(selectedMetric) ? selectedMetric : (metrics[0] ?? '');
 
   // Les points du graphique : seulement les entrées de la métrique active, triées par semaine
   // (sinon la courbe part dans tous les sens si les semaines ne sont pas dans l'ordre du CSV).
@@ -84,6 +95,63 @@ export default function KPITracker() {
   const handleTargetBlur = () => {
     if (form.target.trim() === '') return;
     setForm({ ...form, target: String(clampToRange(Number(form.target), KPI_VALUE_MIN, Infinity)) });
+  };
+
+  // Ouvre le formulaire de modification sur une entrée donnée, en pré-remplissant ses champs.
+  // Rappeler cette fonction pendant qu'une autre entrée est déjà en cours de modification abandonne
+  // silencieusement cette modification-là (pas de confirmation, comme demandé) et bascule sur la
+  // nouvelle.
+  const startEditingEntry = (entry: KPIWeeklyEntry) => {
+    setEditingEntryId(entry.id);
+    setEditForm({
+      week: entry.week,
+      metric: entry.metric,
+      actual: String(entry.actual),
+      target: String(entry.target),
+    });
+  };
+
+  // Referme le formulaire de modification sans rien enregistrer.
+  const cancelEditingEntry = () => setEditingEntryId(null);
+
+  // Enregistre la modification : upsertKpiEntry remplace l'entrée existante puisqu'on lui redonne le
+  // même id (voir sa définition dans useLaunchStore.ts), donc pas besoin d'une action séparée. Pas de
+  // <form>/onSubmit ici (contrairement au formulaire d'ajout) : une ligne de tableau (tr) ne peut pas
+  // être enveloppée dans un form sans casser le tableau, donc ce bouton appelle directement cette
+  // fonction au clic.
+  const handleSaveEditEntry = () => {
+    if (!editingEntryId || !editForm.week.trim() || !editForm.metric.trim()) return;
+
+    upsertKpiEntry({
+      id: editingEntryId,
+      week: editForm.week.trim(),
+      metric: editForm.metric.trim(),
+      actual: Number(editForm.actual) || 0,
+      target: Number(editForm.target) || 0,
+    });
+
+    setEditingEntryId(null);
+  };
+
+  // Mêmes règles de correction que handleActualBlur/handleTargetBlur ci-dessus, appliquées cette
+  // fois aux champs du formulaire de modification.
+  const handleEditActualBlur = () => {
+    if (editForm.actual.trim() === '') return;
+    setEditForm({ ...editForm, actual: String(clampToRange(Number(editForm.actual), KPI_VALUE_MIN, Infinity)) });
+  };
+  const handleEditTargetBlur = () => {
+    if (editForm.target.trim() === '') return;
+    setEditForm({ ...editForm, target: String(clampToRange(Number(editForm.target), KPI_VALUE_MIN, Infinity)) });
+  };
+
+  // Supprime une entrée directement, sans confirmation (même comportement que le bouton Supprimer
+  // du GTM Canvas). Le tableau, la liste de métriques et le graphique se recalculent tout seuls,
+  // puisqu'ils sont tous dérivés de kpiEntries (voir metrics/activeMetric/chartData plus haut) : pas
+  // de code particulier à écrire ici pour ça, y compris quand il ne reste plus aucune entrée
+  // (chartData et kpiEntries tombent alors à 0, déjà géré par les écrans vides existants plus bas).
+  const handleDeleteEntry = (id: string) => {
+    removeKpiEntry(id);
+    if (editingEntryId === id) setEditingEntryId(null);
   };
 
   // Transforme une ligne brute du CSV (que du texte) en vraie entrée KPI typée. Réel et Objectif
@@ -238,19 +306,97 @@ export default function KPITracker() {
                   <th className="py-1.5 pr-4 font-medium">Métrique</th>
                   <th className="py-1.5 pr-4 font-medium">Réel</th>
                   <th className="py-1.5 pr-4 font-medium">Objectif</th>
+                  <th className="py-1.5 pr-4 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {kpiEntries.map((entry) => (
-                  <tr key={entry.id} className="border-b border-border text-ink">
-                    <td className="py-1.5 pr-4">{entry.week}</td>
-                    <td className="py-1.5 pr-4">{entry.metric}</td>
-                    {/* Réel / Objectif sont des nombres : la police mono + tabular-nums garde les
-                        chiffres alignés en colonne, plus facile à comparer d'un coup d'œil. */}
-                    <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.actual}</td>
-                    <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.target}</td>
-                  </tr>
-                ))}
+                {kpiEntries.map((entry) =>
+                  editingEntryId === entry.id ? (
+                    // Ligne de modification : les 4 cellules deviennent des champs de saisie, avec
+                    // les mêmes bornes et le même clamp au blur que le formulaire d'ajout au-dessus.
+                    <tr key={entry.id} className="border-b border-accent text-ink">
+                      <td className="py-1.5 pr-4">
+                        <input
+                          value={editForm.week}
+                          onChange={(event) => setEditForm({ ...editForm, week: event.target.value })}
+                          className="w-16 rounded border border-border bg-canvas px-2 py-1 text-sm text-ink focus:border-accent"
+                        />
+                      </td>
+                      <td className="py-1.5 pr-4">
+                        <input
+                          value={editForm.metric}
+                          onChange={(event) => setEditForm({ ...editForm, metric: event.target.value })}
+                          className="w-32 rounded border border-border bg-canvas px-2 py-1 text-sm text-ink focus:border-accent"
+                        />
+                      </td>
+                      <td className="py-1.5 pr-4">
+                        <input
+                          type="number"
+                          min={KPI_VALUE_MIN}
+                          value={editForm.actual}
+                          onChange={(event) => setEditForm({ ...editForm, actual: event.target.value })}
+                          onBlur={handleEditActualBlur}
+                          className="w-20 rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink focus:border-accent"
+                        />
+                      </td>
+                      <td className="py-1.5 pr-4">
+                        <input
+                          type="number"
+                          min={KPI_VALUE_MIN}
+                          value={editForm.target}
+                          onChange={(event) => setEditForm({ ...editForm, target: event.target.value })}
+                          onBlur={handleEditTargetBlur}
+                          className="w-20 rounded border border-border bg-canvas px-2 py-1 text-sm font-mono tabular-nums text-ink focus:border-accent"
+                        />
+                      </td>
+                      <td className="py-1.5 pr-4">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSaveEditEntry}
+                            className="rounded bg-accent px-2 py-1 text-xs font-medium text-canvas transition-opacity hover:opacity-90"
+                          >
+                            Enregistrer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingEntry}
+                            className="text-xs text-muted hover:text-ink transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={entry.id} className="border-b border-border text-ink">
+                      <td className="py-1.5 pr-4">{entry.week}</td>
+                      <td className="py-1.5 pr-4">{entry.metric}</td>
+                      {/* Réel / Objectif sont des nombres : la police mono + tabular-nums garde les
+                          chiffres alignés en colonne, plus facile à comparer d'un coup d'œil. */}
+                      <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.actual}</td>
+                      <td className="py-1.5 pr-4 font-mono tabular-nums">{entry.target}</td>
+                      <td className="py-1.5 pr-4">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => startEditingEntry(entry)}
+                            className="text-xs text-muted hover:text-ink transition-colors"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            className="text-xs text-muted hover:text-alert transition-colors"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ),
+                )}
               </tbody>
             </table>
           </div>
