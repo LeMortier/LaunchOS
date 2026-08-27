@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import type { KPIWeeklyEntry } from '../../store/types';
-import { clampToRange, KPI_VALUE_MIN } from '../../store/numberBounds';
+import { clampToRange, KPI_VALUE_MIN, parseCsvNumber } from '../../store/numberBounds';
 import { KpiLineChart } from './KpiLineChart';
 
 // Fabrique un identifiant unique pour une nouvelle ligne. Utilisé par le formulaire manuel,
@@ -86,14 +86,15 @@ export default function KPITracker() {
     setForm({ ...form, target: String(clampToRange(Number(form.target), KPI_VALUE_MIN, Infinity)) });
   };
 
-  // Transforme une ligne brute du CSV (que du texte) en vraie entrée KPI typée.
-  // Number() sur une case vide ou invalide renvoie NaN, donc on retombe sur 0 plutôt que planter.
+  // Transforme une ligne brute du CSV (que du texte) en vraie entrée KPI typée. Réel et Objectif
+  // doivent respecter la même borne que le formulaire manuel plus bas (jamais négatifs). En mode
+  // strict (voir CsvImportButton ci-dessous), la moindre ligne invalide annule tout l'import.
   const mapCsvRow = (row: Record<string, string>): KPIWeeklyEntry => ({
     id: row.id?.trim() || generateId(),
     week: row.week ?? '',
     metric: row.metric ?? '',
-    actual: Number(row.actual) || 0,
-    target: Number(row.target) || 0,
+    actual: parseCsvNumber(row.actual, 'La valeur réelle', KPI_VALUE_MIN, Infinity),
+    target: parseCsvNumber(row.target, "L'objectif", KPI_VALUE_MIN, Infinity),
   });
 
   return (
@@ -122,6 +123,7 @@ export default function KPITracker() {
           ]}
           mapRow={mapCsvRow}
           onImport={(rows) => setKpiEntries(rows)}
+          strict
         />
       </div>
 

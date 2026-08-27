@@ -5,13 +5,20 @@ import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { GTM_PHASES, GTM_PHASE_LABELS, type GTMPhaseKey, type GTMTask } from '../../store/types';
-import { clampToRange, GTM_DURATION_MAX, GTM_DURATION_MIN, GTM_START_DAY_MIN } from '../../store/numberBounds';
+import {
+  clampToRange,
+  GTM_DURATION_MAX,
+  GTM_DURATION_MIN,
+  GTM_START_DAY_MIN,
+  parseCsvNumber,
+} from '../../store/numberBounds';
 
-// Quelques lignes d'exemple réalistes, affichées dans le template CSV téléchargeable
-// pour montrer à l'utilisateur à quoi doit ressembler une ligne valide.
+// Quelques lignes d'exemple réalistes, affichées dans le template CSV téléchargeable pour montrer à
+// l'utilisateur à quoi doit ressembler une ligne valide. Le jour 0 est le tout début du projet (pas
+// la date de lancement) : t1 démarre donc à 0, t2 deux semaines plus tard.
 const SAMPLE_ROWS: string[][] = [
-  ['t1', 'Rédiger le brief produit', 'pre-launch', '-21', '5'],
-  ['t2', 'Teaser sur les réseaux sociaux', 'pre-launch', '-7', '7'],
+  ['t1', 'Rédiger le brief produit', 'pre-launch', '0', '5'],
+  ['t2', 'Teaser sur les réseaux sociaux', 'pre-launch', '14', '7'],
   ['t3', "Ouverture des inscriptions", 'launch', '0', '1'],
   ['t4', 'Campagne Ads de lancement', 'launch', '0', '3'],
   ['t5', 'Envoi email de suivi clients', 'post-launch', '7', '2'],
@@ -22,6 +29,19 @@ const SAMPLE_ROWS: string[][] = [
 // plutôt que de planter tout l'import.
 function toPhase(value: string): GTMPhaseKey {
   return (GTM_PHASES as readonly string[]).includes(value) ? (value as GTMPhaseKey) : 'pre-launch';
+}
+
+// mapRow du CSV : le jour de début et la durée doivent respecter les mêmes bornes que le formulaire
+// manuel plus bas (voir handleStartDayBlur/handleDurationDaysBlur). En mode strict (voir
+// CsvImportButton ci-dessous), la moindre ligne invalide annule tout l'import.
+function mapGtmRow(row: Record<string, string>): GTMTask {
+  return {
+    id: row.id?.trim() || crypto.randomUUID(),
+    title: row.title ?? '',
+    phase: toPhase(row.phase ?? ''),
+    startDay: parseCsvNumber(row.startDay, 'Le jour de début', GTM_START_DAY_MIN, Infinity),
+    durationDays: parseCsvNumber(row.durationDays, 'La durée', GTM_DURATION_MIN, GTM_DURATION_MAX),
+  };
 }
 
 export default function GTMCanvas() {
@@ -110,14 +130,9 @@ export default function GTMCanvas() {
           templateFilename="gtm-tasks-template.csv"
           templateHeaders={['id', 'title', 'phase', 'startDay', 'durationDays']}
           templateSampleRows={SAMPLE_ROWS}
-          mapRow={(row) => ({
-            id: row.id || crypto.randomUUID(),
-            title: row.title,
-            phase: toPhase(row.phase),
-            startDay: Number(row.startDay) || 0,
-            durationDays: Number(row.durationDays) || 1,
-          })}
+          mapRow={mapGtmRow}
           onImport={(rows) => setGtmTasks(rows)}
+          strict
         />
       </div>
 

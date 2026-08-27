@@ -34,3 +34,26 @@ export const GTM_DURATION_MAX = 365;
 
 // Les indicateurs suivis par le KPI Tracker (réel, objectif) sont des comptages : jamais négatifs.
 export const KPI_VALUE_MIN = 0;
+
+// Le budget alloué à un canal ne peut pas être négatif.
+export const BUDGET_AMOUNT_MIN = 0;
+
+// Vérifie qu'une valeur texte lue dans un CSV importé est un nombre dans les bornes attendues. Sert
+// au mode strict des imports (voir CsvImportButton et parseCsvFileStrict) : contrairement à
+// clampToRange ci-dessus, qui corrige silencieusement une valeur hors bornes pendant la saisie
+// manuelle, celle-ci ne corrige jamais rien : elle refuse la ligne (et donc tout le fichier, en mode
+// strict) avec un message qui dit quel champ pose problème et quelle plage était attendue. "label"
+// doit être le début d'une phrase (ex: "Le coût par clic"), pour que le message se lise bien une fois
+// complété.
+export function parseCsvNumber(rawText: string | undefined, label: string, min: number, max: number): number {
+  const text = (rawText ?? '').trim();
+  const value = Number(text);
+  if (text === '' || Number.isNaN(value)) {
+    throw new Error(`${label} est invalide : "${rawText ?? ''}" n'est pas un nombre.`);
+  }
+  if (value < min || value > max) {
+    const range = max === Infinity ? `être au moins ${min}` : `être compris entre ${min} et ${max}`;
+    throw new Error(`${label} est hors limites : "${value}" doit ${range}.`);
+  }
+  return value;
+}

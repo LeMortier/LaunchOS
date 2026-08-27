@@ -22,6 +22,7 @@ import {
   CONVERSION_RATE_MAX,
   CONVERSION_RATE_MIN,
   COST_PER_CLICK_MIN,
+  parseCsvNumber,
   REVENUE_PER_CUSTOMER_MIN,
 } from '../../store/numberBounds';
 import { computeFunnelRows, computeFunnelTotals, emptyFunnelConfig } from './funnelMath';
@@ -114,8 +115,9 @@ export default function SankeyFunnel() {
   const rows = computeFunnelRows(channelBudgets, funnelConfigs);
   const totals = computeFunnelTotals(rows);
 
-  // mapRow du CSV : on vérifie que le canal fait bien partie des 4 connus avant d'accepter la ligne.
-  // Si mapRow lève une erreur, parseCsvFile ignore juste cette ligne (voir csvImport.ts).
+  // mapRow du CSV : on vérifie que le canal fait bien partie des 4 connus, puis que les 4 hypothèses
+  // respectent les mêmes bornes que la saisie manuelle (voir les <input> du tableau plus bas). En
+  // mode strict (voir CsvImportButton ci-dessous), la moindre ligne invalide annule tout l'import.
   const mapCsvRow = (row: Record<string, string>): ChannelFunnelConfig => {
     const rawChannel = row.channel?.trim();
     if (!rawChannel || !(CHANNELS as readonly string[]).includes(rawChannel)) {
@@ -123,10 +125,10 @@ export default function SankeyFunnel() {
     }
     return {
       channel: rawChannel as Channel,
-      costPerClick: Number(row.costPerClick),
-      clickToLeadRate: Number(row.clickToLeadRate),
-      leadToCustomerRate: Number(row.leadToCustomerRate),
-      avgRevenuePerCustomer: Number(row.avgRevenuePerCustomer),
+      costPerClick: parseCsvNumber(row.costPerClick, 'Le coût par clic', COST_PER_CLICK_MIN, Infinity),
+      clickToLeadRate: parseCsvNumber(row.clickToLeadRate, 'Le taux clic → lead', CONVERSION_RATE_MIN, CONVERSION_RATE_MAX),
+      leadToCustomerRate: parseCsvNumber(row.leadToCustomerRate, 'Le taux lead → client', CONVERSION_RATE_MIN, CONVERSION_RATE_MAX),
+      avgRevenuePerCustomer: parseCsvNumber(row.avgRevenuePerCustomer, 'Le revenu par client', REVENUE_PER_CUSTOMER_MIN, Infinity),
     };
   };
 
@@ -176,6 +178,7 @@ export default function SankeyFunnel() {
           ]}
           mapRow={mapCsvRow}
           onImport={(importedRows) => setFunnelConfigs(importedRows)}
+          strict
         />
       </div>
 

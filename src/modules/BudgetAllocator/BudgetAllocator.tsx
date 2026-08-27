@@ -7,27 +7,25 @@
 import { CHANNELS, CHANNEL_LABELS, type Channel, type ChannelBudget } from '../../store/types';
 import { useLaunchStore } from '../../store/useLaunchStore';
 import { CsvImportButton } from '../../components/CsvImportButton';
+import { BUDGET_AMOUNT_MIN, parseCsvNumber } from '../../store/numberBounds';
 import { BudgetDonutChart } from './BudgetDonutChart';
 
-// Bornes du slider : on part du principe qu'un seul canal ne recevra jamais plus de 50 000€
-// d'un coup. On pourra rendre ça configurable plus tard si besoin.
-const BUDGET_MIN = 0;
+// Bornes du slider. Le minimum vient de numberBounds.ts (même règle que l'import CSV plus bas) ;
+// le plafond et le pas restent propres à ce curseur, c'est juste une limite d'ergonomie (on part du
+// principe qu'un seul canal ne recevra jamais plus de 50 000€ d'un coup), pas une règle métier.
 const BUDGET_MAX = 50000;
 const BUDGET_STEP = 500;
 
-// Transforme une ligne brute du CSV (juste du texte) en ChannelBudget typé.
-// Si le canal n'existe pas dans CHANNELS, ou si le montant n'est pas un nombre valide, on lève
-// une erreur : parseCsvFile (dans csvImport.ts) l'attrape et ignore juste cette ligne-là, sans
-// faire planter tout l'import.
+// Transforme une ligne brute du CSV (juste du texte) en ChannelBudget typé. Si le canal n'existe pas
+// dans CHANNELS, ou si le montant n'est pas un nombre valide ou négatif, on lève une erreur :
+// parseCsvFileStrict (mode strict, voir plus bas) annule alors tout l'import avec ce message,
+// plutôt que de laisser passer un budget cassé.
 function mapBudgetRow(row: Record<string, string>): ChannelBudget {
   const channelValue = (row.channel ?? '').trim().toLowerCase();
   if (!(CHANNELS as readonly string[]).includes(channelValue)) {
     throw new Error(`Canal inconnu dans le CSV : "${channelValue}"`);
   }
-  const amount = Number(row.amount);
-  if (Number.isNaN(amount)) {
-    throw new Error(`Montant invalide dans le CSV : "${row.amount}"`);
-  }
+  const amount = parseCsvNumber(row.amount, 'Le montant', BUDGET_AMOUNT_MIN, Infinity);
   return { channel: channelValue as Channel, amount };
 }
 
@@ -72,6 +70,7 @@ export default function BudgetAllocator() {
         templateSampleRows={SAMPLE_ROWS}
         mapRow={mapBudgetRow}
         onImport={setChannelBudgets}
+        strict
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -92,7 +91,7 @@ export default function BudgetAllocator() {
                 <input
                   id={`slider-${channel}`}
                   type="range"
-                  min={BUDGET_MIN}
+                  min={BUDGET_AMOUNT_MIN}
                   max={BUDGET_MAX}
                   step={BUDGET_STEP}
                   value={amount}
