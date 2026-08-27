@@ -22,7 +22,7 @@ Je dois présenter ce projet à l'oral devant un jury et je ne suis pas à l'ais
 ## Règles visuelles
 - La palette bleu-nuit en place fait référence. Ne pas introduire de nouvelle couleur d'accent sans validation.
 - Interdits : emoji utilisés comme icônes, dégradés violet ou rose, glassmorphism, ombres portées décoratives, noir pur #000000 et blanc pur #ffffff, couleurs Tailwind par défaut hors palette du projet, animations décoratives sans fonction.
-- Les graphiques Chart.js et le rapport PDF reprennent strictement la palette du projet.
+- Les graphiques recharts et le rapport PDF reprennent strictement la palette du projet.
 
 ## Règles de rédaction
 S'appliquent à tout le texte que tu produis : commentaires de code, README, textes d'interface, contenu du rapport PDF, messages de commit. Elles se combinent avec la section "Commentaires de code" ci-dessus, qui reste prioritaire sur le ton à adopter dans les commentaires.
