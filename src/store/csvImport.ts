@@ -71,11 +71,22 @@ export function parseCsvFileStrict<T>(
           row !== undefined && Object.values(row).every((value) => !value || value.trim() === '');
 
         // Une erreur de structure détectée par Papaparse elle-même (ex: guillemet non fermé) : on
-        // la remonte avec un numéro de ligne, SAUF si elle porte sur une ligne vide. Papaparse
-        // signale "trop peu de champs" sur la ligne vide finale d'un fichier normal, ce qui ferait
-        // rejeter à tort la quasi-totalité des fichiers CSV (ils se terminent presque tous par un
-        // retour à la ligne).
-        const structuralErrors = results.errors.filter((err) => !isBlankRow(results.data[err.row ?? -1]));
+        // la remonte avec un numéro de ligne, SAUF dans deux cas qui ne sont pas de vraies erreurs :
+        // - elle porte sur une ligne vide. Papaparse signale "trop peu de champs" sur la ligne vide
+        //   finale d'un fichier normal, ce qui ferait rejeter à tort la quasi-totalité des fichiers
+        //   CSV (ils se terminent presque tous par un retour à la ligne).
+        // - son code est "UndetectableDelimiter". Sur un fichier à 2 colonnes qui se termine par un
+        //   retour à la ligne, cette même ligne finale vide fait aussi échouer la détection
+        //   automatique du séparateur (pas assez de matière pour la deviner) : Papaparse se rabat
+        //   alors sur la virgule (le bon séparateur ici, "DefaultDelimiter") et analyse correctement
+        //   tout le fichier, mais remonte quand même cette erreur pour signaler qu'il a dû deviner.
+        //   Ce n'est qu'un avertissement sur son propre choix, pas un défaut du fichier ; elle n'a
+        //   en plus pas de "row", donc le filtre sur les lignes vides juste au-dessus ne l'attrape
+        //   pas (isBlankRow(undefined) vaut toujours false, volontairement, pour ne jamais avaler une
+        //   vraie erreur par excès de prudence), d'où ce second filtre dédié.
+        const structuralErrors = results.errors.filter(
+          (err) => err.code !== 'UndetectableDelimiter' && !isBlankRow(results.data[err.row ?? -1]),
+        );
         if (structuralErrors.length > 0) {
           const firstError = structuralErrors[0];
           const line = typeof firstError.row === 'number' ? firstError.row + 2 : undefined;
