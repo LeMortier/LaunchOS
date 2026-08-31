@@ -24,6 +24,10 @@ LaunchOS rassemble ces cinq dimensions dans un outil unique. Chaque saisie se r�
 
 **PDF Export.** Le rapport consolidé, graphiques compris, à remettre en comité ou à archiver en fin de lancement.
 
+## Sauvegarder un projet
+
+Deux boutons dans la barre latérale complètent les imports CSV faits module par module. "Exporter le projet" télécharge l'état complet des six modules dans un fichier JSON, nommé d'après le titre du rapport et la date, comme le rapport PDF. "Ouvrir un projet" relit un de ces fichiers et remplace les données courantes, de quoi reprendre un lancement sur une autre machine ou le transmettre à quelqu'un. Le fichier est vérifié en entier avant le moindre remplacement, avec les mêmes bornes numériques que les imports CSV : au premier problème, l'ouverture est refusée avec un message qui cite l'élément en cause, et rien n'est modifié.
+
 ## La barre de pilotage
 
 En haut de l'écran, une barre reste visible quel que soit le module ouvert. Elle affiche quatre constantes vitales : le budget total alloué, le ROAS global, le score de risque et l'avancement du calendrier GTM.

@@ -6,6 +6,7 @@ import { useLaunchStore } from '../../store/useLaunchStore';
 import type { RiskCriterion } from '../../store/types';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { formatNumber } from '../../store/formatters';
+import { RISK_SCORE_MAX, RISK_SCORE_MIN, RISK_WEIGHT_MIN } from '../../store/numberBounds';
 
 // Les 10 critères de départ, avec une note neutre (5/10) et un poids égal pour chacun (0.1 x 10 = 1).
 // On les met ici plutôt que dans le store partagé (types.ts) car ce sont juste des valeurs de démarrage
@@ -93,14 +94,18 @@ export default function RiskScorer() {
 
     const scoreText = row.score?.trim();
     const score = Number(scoreText);
-    if (!scoreText || Number.isNaN(score) || score < 0 || score > 10) {
-      throw new Error(`le score "${row.score ?? ''}" doit être un nombre entre 0 et 10.`);
+    if (!scoreText || Number.isNaN(score) || score < RISK_SCORE_MIN || score > RISK_SCORE_MAX) {
+      throw new Error(
+        `le score "${row.score ?? ''}" doit être un nombre entre ${RISK_SCORE_MIN} et ${RISK_SCORE_MAX}.`,
+      );
     }
 
     const weightText = row.weight?.trim();
     const weight = Number(weightText);
-    if (!weightText || Number.isNaN(weight) || weight <= 0) {
-      throw new Error(`le poids "${row.weight ?? ''}" doit être un nombre strictement supérieur à 0.`);
+    if (!weightText || Number.isNaN(weight) || weight <= RISK_WEIGHT_MIN) {
+      throw new Error(
+        `le poids "${row.weight ?? ''}" doit être un nombre strictement supérieur à ${RISK_WEIGHT_MIN}.`,
+      );
     }
 
     return { id, label, score, weight };
@@ -196,8 +201,8 @@ export default function RiskScorer() {
             <div className="mt-3 flex items-center gap-3">
               <input
                 type="range"
-                min={0}
-                max={10}
+                min={RISK_SCORE_MIN}
+                max={RISK_SCORE_MAX}
                 step={1}
                 value={criterion.score}
                 onChange={(event) =>

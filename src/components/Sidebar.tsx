@@ -1,9 +1,10 @@
 // La barre de navigation à gauche de l'écran : elle liste les 6 modules et permet de cliquer
 // pour passer de l'un à l'autre. Elle ne connaît pas le détail de chaque module, juste leur nom
 // (grâce à la liste MODULES définie dans modules/registry.ts).
-// Elle porte aussi les 2 boutons globaux "Charger le scénario de démo" et "Réinitialiser", puisque
-// ce sont les seuls éléments visibles depuis tous les modules en même temps.
+// Elle porte aussi les 4 boutons globaux (scénario de démo, réinitialisation, export et ouverture
+// d'un projet), puisque ce sont les seuls éléments visibles depuis tous les modules en même temps.
 import { MODULES, type ModuleId } from '../modules/registry';
+import { ProjectFileButtons } from './ProjectFileButtons';
 import { DEMO_SCENARIO, hasExistingLaunchData } from '../store/demoScenario';
 import { useLaunchStore } from '../store/useLaunchStore';
 
@@ -53,8 +54,8 @@ export function Sidebar({ activeModule, onSelectModule }: SidebarProps) {
 
       {/* Boutons globaux, visibles depuis n'importe quel module : pratique pour une démo ou une
           soutenance, pas besoin d'aller module par module pour tout remplir ou tout effacer.
-          "Charger le scénario de démo" est LA vraie action ici, donc en ambre (accent). Réinitialiser
-          reste neutre : ce n'est pas l'action qu'on veut mettre en avant. */}
+          "Charger le scénario de démo" est LA vraie action ici, donc en ambre (accent). Les trois
+          autres restent neutres, ce sont des actions de service. */}
       <div className="flex flex-col gap-2 px-2 pb-6">
         <button
           type="button"
@@ -70,6 +71,9 @@ export function Sidebar({ activeModule, onSelectModule }: SidebarProps) {
         >
           Réinitialiser
         </button>
+        {/* Sauvegarder le projet dans un fichier et le rouvrir plus tard, ou sur une autre machine.
+            Le composant porte aussi son propre message de confirmation ou d'erreur. */}
+        <ProjectFileButtons />
       </div>
 
       {/* On affiche un bouton par module. Le module actif se distingue par une barre verticale ambre

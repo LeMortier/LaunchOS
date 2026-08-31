@@ -38,6 +38,17 @@ export const KPI_VALUE_MIN = 0;
 // Le budget alloué à un canal ne peut pas être négatif.
 export const BUDGET_AMOUNT_MIN = 0;
 
+// Une note du questionnaire du Risk Scorer va de 0 (aucun risque) à 10 (risque maximal).
+export const RISK_SCORE_MIN = 0;
+export const RISK_SCORE_MAX = 10;
+
+// Le poids d'un critère de risque. Attention, c'est la seule borne de ce fichier qui REFUSE sa propre
+// valeur : un poids doit être strictement au-dessus de 0, jamais égal à 0. Un critère qui pèse 0 ne
+// change rien au score global (le calcul fait note x poids), autant le retirer du questionnaire.
+// Comme il n'existe pas de "plus petit nombre juste au-dessus de zéro", on ne peut pas l'écrire comme
+// un minimum normal : c'est la comparaison qui doit être stricte partout où cette borne est utilisée.
+export const RISK_WEIGHT_MIN = 0;
+
 // Vérifie qu'une valeur texte lue dans un CSV importé est un nombre dans les bornes attendues. Sert
 // au mode strict des imports (voir CsvImportButton et parseCsvFileStrict) : contrairement à
 // clampToRange ci-dessus, qui corrige silencieusement une valeur hors bornes pendant la saisie
@@ -56,4 +67,29 @@ export function parseCsvNumber(rawText: string | undefined, label: string, min: 
     throw new Error(`${label} est hors limites : "${value}" doit ${range}.`);
   }
   return value;
+}
+
+// La cousine de parseCsvNumber ci-dessus, pour les valeurs qui arrivent d'un fichier JSON (l'ouverture
+// d'un projet complet, voir projectFile.ts) plutôt que d'un CSV. Les deux partagent les mêmes bornes
+// et le même style de message ; seule la façon de lire la valeur change. Dans un CSV tout est du
+// texte, donc "1000" doit être converti en nombre. Dans un JSON, un nombre s'écrit déjà comme un
+// nombre : recevoir "1000" entre guillemets est une erreur de format du fichier, pas une valeur à
+// convertir, donc on la refuse. On refuse aussi NaN et l'infini, qui feraient des calculs cassés
+// dans les modules sans que rien ne le signale à l'écran.
+export function parseJsonNumber(value: unknown, label: string, min: number, max: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${label} est invalide : ${describeJsonValue(value)} n'est pas un nombre.`);
+  }
+  if (value < min || value > max) {
+    const range = max === Infinity ? `être au moins ${min}` : `être compris entre ${min} et ${max}`;
+    throw new Error(`${label} est hors limites : "${value}" doit ${range}.`);
+  }
+  return value;
+}
+
+// Réaffiche la valeur fautive telle qu'elle était écrite dans le fichier, pour que le message d'erreur
+// aide vraiment à la retrouver. JSON.stringify garde les guillemets d'une chaîne (on voit donc bien la
+// différence entre 1000 et "1000"), mais renvoie undefined pour une valeur absente, d'où le repli.
+function describeJsonValue(value: unknown): string {
+  return JSON.stringify(value) ?? String(value);
 }

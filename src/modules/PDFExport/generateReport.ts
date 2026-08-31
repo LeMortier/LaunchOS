@@ -17,6 +17,7 @@ import {
   type RiskCriterion,
 } from '../../store/types';
 import { formatCount, formatMoney, formatNumber } from '../../store/formatters';
+import { buildTimestampedFilename } from '../../store/fileDownload';
 import { computeFunnelTotals, type FunnelRow } from '../SankeyFunnel/funnelMath';
 
 // Les 3 graphiques à "photographier" pour le rapport. PDFExport.tsx les rend hors écran, avec une
@@ -39,20 +40,6 @@ export interface GenerateReportParams {
 }
 
 const PAGE_MARGIN = 48;
-
-// Fabrique un nom de fichier propre (sans accents ni caractères spéciaux, sinon certains systèmes
-// d'exploitation ou navigateurs peuvent mal le gérer) à partir du titre du rapport, suivi de la date
-// du jour. Si le titre est vide, on retombe sur un nom générique plutôt que de produire un nom bizarre.
-function buildFilename(title: string): string {
-  const dateStr = new Date().toISOString().slice(0, 10); // AAAA-MM-JJ : se trie bien, pas d'ambiguïté
-  const slug = title
-    .normalize('NFD')
-    .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '') // enlève les accents (é -> e, è -> e...)
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
-  return `${slug || 'rapport-de-lancement'}-${dateStr}.pdf`;
-}
 
 // Les nombres formatés en français (formatMoney/formatNumber) utilisent une espace fine insécable
 // (caractère U+202F) comme séparateur de milliers. C'est la bonne typographie à l'écran, mais la
@@ -382,5 +369,5 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     );
   }
 
-  doc.save(buildFilename(reportMeta.title));
+  doc.save(buildTimestampedFilename(reportMeta.title, 'pdf'));
 }
