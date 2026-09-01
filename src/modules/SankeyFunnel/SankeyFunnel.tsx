@@ -26,7 +26,7 @@ import {
   REVENUE_PER_CUSTOMER_MIN,
 } from '../../store/numberBounds';
 import { computeFunnelRows, computeFunnelTotals, emptyFunnelConfig } from './funnelMath';
-import { SankeyDiagram } from './SankeyDiagram';
+import { FunnelCharts } from './SankeyDiagram';
 
 export default function SankeyFunnel() {
   // Lecture seule : le budget par canal vient du Budget Allocator, on n'y touche jamais ici.
@@ -252,14 +252,14 @@ export default function SankeyFunnel() {
         </p>
       </div>
 
-      {/* Le diagramme de Sankey : la vue "flux" du funnel. Chaque voie de couleur suit un canal du
-          Budget Allocator, de son budget jusqu'aux clients, en passant par les clics et les leads.
-          Il se recalcule tout seul dès qu'un budget ou une hypothèse change. C'est LE bloc héros du
+      {/* Un entonnoir par canal (clics -> leads -> clients), chacun dans la couleur de son canal,
+          pour comparer les canaux entre eux d'un coup d'œil : c'est la vraie valeur de ce module.
+          Se recalcule tout seul dès qu'un budget ou une hypothèse change. C'est LE bloc héros du
           module (juste après le tableau des hypothèses, avant le tableau des résultats), donc on lui
           donne un peu plus de place (p-8) qu'aux autres cartes pour qu'il respire. */}
       <div className="overflow-x-auto bg-surface border border-border rounded-lg p-8">
         <h3 className="mb-3 text-sm font-semibold text-ink">Diagramme du funnel par canal</h3>
-        <SankeyDiagram rows={rows} />
+        <FunnelCharts rows={rows} />
       </div>
 
       {/* Tableau récapitulatif : le résultat du calcul du funnel, canal par canal + une ligne total,

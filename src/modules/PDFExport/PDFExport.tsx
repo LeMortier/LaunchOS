@@ -8,7 +8,7 @@ import { useLaunchStore } from '../../store/useLaunchStore';
 import type { ReportMeta } from '../../store/types';
 import { BudgetDonutChart } from '../BudgetAllocator/BudgetDonutChart';
 import { KpiMetricsCharts } from '../KPITracker/KpiMetricsCharts';
-import { SankeyDiagram } from '../SankeyFunnel/SankeyDiagram';
+import { FunnelCharts } from '../SankeyFunnel/SankeyDiagram';
 import { computeFunnelRows } from '../SankeyFunnel/funnelMath';
 import { generateLaunchReportPdf } from './generateReport';
 
@@ -194,7 +194,7 @@ export default function PDFExport() {
           <KpiMetricsCharts kpiEntries={kpiEntries} height={220} variant="light" />
         </div>
         <div ref={sankeyDiagramRef} style={{ backgroundColor: '#ffffff', padding: 16 }}>
-          <SankeyDiagram rows={funnelRows} variant="light" />
+          <FunnelCharts rows={funnelRows} variant="light" />
         </div>
       </div>
     </div>

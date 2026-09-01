@@ -339,10 +339,10 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
   if (!hasFunnelData) {
     drawEmptyState();
   } else {
-    // Largeur/hauteur de capture figées volontairement plus grandes que le rendu naturel du
-    // diagramme (voir le commentaire sur drawCapturedImage) pour être sûr qu'aucune voie de canal
-    // (notamment la dernière, PR) ne soit rognée par une mesure "auto" imprécise.
-    await drawCapturedImage(captureElements.sankeyDiagram, 320, { width: 820, height: 460 });
+    // Pas de forceSize ici (contrairement à l'ancien diagramme de Sankey fait main) : la grille
+    // d'entonnoirs est en recharts + ResponsiveContainer, comme le donut et les courbes KPI plus
+    // haut, qui n'en ont pas besoin non plus. Leur mesure "auto" est fiable.
+    await drawCapturedImage(captureElements.sankeyDiagram, 620);
     const totals = computeFunnelTotals(funnelRows);
     drawTable(
       'Sankey Funnel & ROAS',
