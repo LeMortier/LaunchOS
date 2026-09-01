@@ -154,7 +154,7 @@ export default function PDFExport() {
           <SummaryCard label="Entrées KPI" value={`${kpiEntries.length}`} />
           <SummaryCard label="Critères de risque notés" value={`${riskCriteria.length}`} />
           <SummaryCard
-            label="Canaux Sankey configurés"
+            label="Canaux funnel configurés"
             value={`${configuredFunnelChannels}/${funnelConfigs.length}`}
           />
         </div>

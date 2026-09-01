@@ -135,7 +135,7 @@ export default function SankeyFunnel() {
   return (
     <div className="flex flex-col gap-8 p-6">
       <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Sankey Funnel & ROAS</h2>
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Funnel d'acquisition & ROAS</h2>
         <p className="text-sm text-muted mt-2">
           Simulateur d'acquisition : on part du budget par canal pour estimer clics, leads, clients et revenu.
         </p>
@@ -168,7 +168,7 @@ export default function SankeyFunnel() {
         <CsvImportButton<ChannelFunnelConfig>
           key={resetGeneration}
           label="Importer les hypothèses (CSV)"
-          templateFilename="sankey-funnel-template.csv"
+          templateFilename="funnel-acquisition-template.csv"
           templateHeaders={['channel', 'costPerClick', 'clickToLeadRate', 'leadToCustomerRate', 'avgRevenuePerCustomer']}
           templateSampleRows={[
             ['ads', '1.5', '0.10', '0.20', '450'],

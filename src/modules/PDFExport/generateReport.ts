@@ -334,7 +334,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
   // --- Sankey Funnel & ROAS : diagramme en image + tableau des résultats par canal --------------------
   doc.addPage();
   cursor.y = PAGE_MARGIN;
-  drawSectionTitle('Sankey Funnel & ROAS');
+  drawSectionTitle("Funnel d'acquisition & ROAS");
   const hasFunnelData = funnelRows.some((row) => row.clicks > 0);
   if (!hasFunnelData) {
     drawEmptyState();
@@ -345,7 +345,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     await drawCapturedImage(captureElements.sankeyDiagram, 620);
     const totals = computeFunnelTotals(funnelRows);
     drawTable(
-      'Sankey Funnel & ROAS',
+      "Funnel d'acquisition & ROAS",
       ['Canal', 'Clics', 'Leads', 'Clients', 'Revenu', 'ROAS'],
       [
         ...funnelRows.map((row) => [

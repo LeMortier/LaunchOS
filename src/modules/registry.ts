@@ -23,6 +23,6 @@ export const MODULES: ModuleMeta[] = [
   { id: 'budget-allocator', label: 'Budget Allocator', description: 'Répartition du budget par canal' },
   { id: 'kpi-tracker', label: 'KPI Tracker', description: 'Courbes de progression hebdo vs objectifs' },
   { id: 'risk-scorer', label: 'Risk Scorer', description: 'Score de risque sur 10 critères' },
-  { id: 'sankey-funnel', label: 'Sankey Funnel & ROAS', description: "Simulateur d'acquisition" },
+  { id: 'sankey-funnel', label: "Funnel d'acquisition & ROAS", description: "Simulateur d'acquisition" },
   { id: 'pdf-export', label: 'PDF Export', description: 'Rapport consolidé de tous les modules' },
 ];
