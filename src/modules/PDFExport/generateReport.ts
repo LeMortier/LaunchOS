@@ -7,12 +7,14 @@
 import { jsPDF } from 'jspdf';
 import { toCanvas } from 'html-to-image';
 import {
+  CHANNEL_COLORS,
   CHANNEL_LABELS,
   GTM_PHASES,
   GTM_PHASE_LABELS,
   type ChannelBudget,
   type GTMTask,
   type KPIWeeklyEntry,
+  RISK_HIGH_THRESHOLD,
   type ReportMeta,
   type RiskCriterion,
 } from '../../store/types';
@@ -40,6 +42,34 @@ export interface GenerateReportParams {
 }
 
 const PAGE_MARGIN = 48;
+
+// La compression des 3 images capturées (donut, courbes KPI, entonnoirs), passée à doc.addImage.
+// Sans elle, jsPDF range chaque image en RGB brut, sans aucune compression : le rapport du scénario
+// de démo pesait 16,8 Mo, dont 6,2 Mo pour la seule grille d'entonnoirs.
+// C'est le 8e paramètre de addImage qui décide de ça (ImageCompression dans les types de jsPDF :
+// "NONE", "FAST", "MEDIUM" ou "SLOW"), et surtout pas le format passé en 2e position : celui-là vaut
+// déjà "PNG" et ne dit que comment lire la capture, pas comment la ranger dans le fichier.
+// Chaque valeur choisit un couple filtre PNG + niveau de zlib. Mesuré sur le scénario de démo, avec
+// des captures de graphiques (de grands aplats de couleur unie), taille du fichier et temps de
+// génération dans le navigateur : NONE 16,8 Mo en 1,26 s, FAST 287 Ko en 1,25 s, MEDIUM 330 Ko en
+// 1,28 s, SLOW 267 Ko en 2,06 s.
+// FAST est donc à la fois le plus rapide et presque le plus petit, et il ne coûte rien par rapport à
+// l'absence de compression. Les 20 Ko que SLOW ferait gagner ne valent pas ses 800 ms de calcul en
+// plus. La compression PNG est sans perte : l'image du PDF reste identique au pixel près.
+const IMAGE_COMPRESSION = 'FAST';
+
+// Les couleurs de la palette du projet, réécrites ici en hexadécimal parce que jsPDF ne connaît ni les
+// classes Tailwind ni les variables CSS de index.css : il ne sait recevoir qu'une couleur brute. Ce
+// sont exactement les valeurs de --color-canvas, --color-ink, --color-muted, --color-accent et
+// --color-alert. Même principe que CHANNEL_COLORS dans types.ts : si la palette bouge dans index.css,
+// elle doit bouger ici aussi.
+const PDF_COLORS = {
+  canvas: '#0E1620',
+  ink: '#E7EDF5',
+  muted: '#8A9BB0',
+  accent: '#F2A65A',
+  alert: '#E5677E',
+};
 
 // Les nombres formatés en français (formatMoney/formatNumber) utilisent une espace fine insécable
 // (caractère U+202F) comme séparateur de milliers. C'est la bonne typographie à l'écran, mais la
@@ -133,9 +163,23 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
   // Un tableau très simple, dessiné à la main (en-tête en gras + une ligne de séparation, puis
   // chaque ligne de données colonne par colonne) : pas besoin d'une librairie de tableau pour ça.
   // sectionTitle ne sert qu'au rappel "(suite)" plus bas, quand le tableau déborde sur une nouvelle page.
-  const drawTable = (sectionTitle: string, headers: string[], rows: string[][], columnWidths: number[]) => {
+  // rowMarkers (optionnel) donne, ligne par ligne, la couleur d'une pastille à dessiner devant la
+  // première colonne, ou null pour une ligne qui n'en a pas (la ligne "Total", qui n'appartient à
+  // aucun canal). Les tableaux sans canal (KPI Tracker, Risk Scorer) ne passent tout simplement pas
+  // ce paramètre et sont dessinés exactement comme avant.
+  const drawTable = (
+    sectionTitle: string,
+    headers: string[],
+    rows: string[][],
+    columnWidths: number[],
+    rowMarkers?: (string | null)[],
+  ) => {
     const rowHeight = 16;
     const headerHeight = 20; // hauteur réellement utilisée par drawHeaderRow ci-dessous (6 + 14)
+    // La place réservée aux pastilles, prise à l'intérieur de la première colonne. L'en-tête se décale
+    // d'autant que les cellules, sinon le titre "Canal" ne serait plus aligné avec les noms en dessous.
+    // Sans pastille, ce décalage vaut 0 : la mise en page ne change pas d'un point.
+    const markerIndent = rowMarkers ? 12 : 0;
 
     // Dessine la ligne d'en-tête des colonnes. Appelée une première fois avant la première ligne de
     // données, puis rappelée en haut de chaque nouvelle page tant que le tableau continue : sans ça,
@@ -146,7 +190,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
       doc.setTextColor(120, 120, 120);
       let x = PAGE_MARGIN;
       headers.forEach((header, i) => {
-        pdfText(header, x, cursor.y);
+        pdfText(header, i === 0 ? x + markerIndent : x, cursor.y);
         x += columnWidths[i];
       });
       cursor.y += 6;
@@ -177,7 +221,7 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(45, 45, 45);
-    for (const row of rows) {
+    rows.forEach((row, rowIndex) => {
       ensureSpace(rowHeight, () => {
         drawContinuationReminder();
         drawHeaderRow();
@@ -187,13 +231,21 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
         doc.setFontSize(10);
         doc.setTextColor(45, 45, 45);
       });
+      // La pastille du canal, un petit disque plein dans la couleur de ce canal. On la remonte de 3
+      // points au-dessus de la ligne de base du texte (la ligne sur laquelle les lettres reposent)
+      // pour qu'elle tombe à la hauteur du milieu des lettres, et pas sous le mot.
+      const markerColor = rowMarkers?.[rowIndex];
+      if (markerColor) {
+        doc.setFillColor(markerColor);
+        doc.circle(PAGE_MARGIN + 3, cursor.y - 3, 2.5, 'F');
+      }
       let x = PAGE_MARGIN;
       row.forEach((cell, i) => {
-        pdfText(cell, x, cursor.y);
+        pdfText(cell, i === 0 ? x + markerIndent : x, cursor.y);
         x += columnWidths[i];
       });
       cursor.y += rowHeight;
-    }
+    });
     cursor.y += 12;
   };
 
@@ -223,38 +275,71 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     const w = canvas.width * ratio;
     const h = canvas.height * ratio;
     ensureSpace(h + 16);
-    doc.addImage(canvas, 'PNG', PAGE_MARGIN, cursor.y, w, h);
+    // "undefined" est l'alias de l'image (jsPDF le calcule tout seul à partir du contenu) : il faut
+    // le passer pour atteindre le paramètre suivant, la compression.
+    doc.addImage(canvas, 'PNG', PAGE_MARGIN, cursor.y, w, h, undefined, IMAGE_COMPRESSION);
     cursor.y += h + 16;
   };
 
-  // --- Page de couverture : titre, sous-titre, préparé par, date du jour ---------------------------
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
-  doc.setTextColor(23, 23, 23);
-  const titleLines = pdfSplit(reportMeta.title || 'Rapport de lancement', contentWidth);
-  pdfText(titleLines, PAGE_MARGIN, 140);
-  let coverY = 140 + titleLines.length * 32 + 16;
+  // --- Page de garde ------------------------------------------------------------------------------
+  // La seule page sombre du rapport, et c'est assumé : elle donne son identité au document. Tout le
+  // reste est imprimé sur fond blanc, pour qu'imprimer le rapport ne vide pas une cartouche d'encre.
+  doc.setFillColor(PDF_COLORS.canvas);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  if (reportMeta.subtitle) {
+  // La signature en haut à gauche. setCharSpace écarte les lettres les unes des autres : c'est ce qui
+  // donne son air de logo à un mot écrit en majuscules. On remet l'écartement à 0 juste derrière,
+  // sinon TOUT le texte du reste du document en hériterait.
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(PDF_COLORS.accent);
+  doc.setCharSpace(2);
+  pdfText('LAUNCHOS', PAGE_MARGIN, PAGE_MARGIN + 12);
+  doc.setCharSpace(0);
+
+  // Le bloc titre + sous-titre est centré verticalement. On mesure d'abord sa hauteur totale, parce
+  // qu'un titre long tient sur plusieurs lignes, puis on démarre à la moitié de la place restante.
+  // Chaque ligne descend le curseur AVANT d'être écrite : jsPDF place le texte par sa ligne de base
+  // (la ligne sur laquelle les lettres reposent), donc écrire à la hauteur du haut du bloc ferait
+  // dépasser la première ligne vers le haut.
+  const coverTitleLineHeight = 36;
+  const coverSubtitleLineHeight = 20;
+  const coverSubtitleGap = 14;
+  doc.setFontSize(30);
+  const titleLines = pdfSplit(reportMeta.title || 'Rapport de lancement', contentWidth);
+  const subtitleLines = reportMeta.subtitle ? pdfSplit(reportMeta.subtitle, contentWidth) : [];
+  const coverBlockHeight =
+    titleLines.length * coverTitleLineHeight +
+    (subtitleLines.length > 0 ? coverSubtitleGap + subtitleLines.length * coverSubtitleLineHeight : 0);
+  let coverY = (pageHeight - coverBlockHeight) / 2;
+
+  doc.setTextColor(PDF_COLORS.ink);
+  for (const line of titleLines) {
+    coverY += coverTitleLineHeight;
+    pdfText(line, PAGE_MARGIN, coverY);
+  }
+
+  if (subtitleLines.length > 0) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(14);
-    doc.setTextColor(100, 100, 100);
-    const subtitleLines = pdfSplit(reportMeta.subtitle, contentWidth);
-    pdfText(subtitleLines, PAGE_MARGIN, coverY);
-    coverY += subtitleLines.length * 20 + 24;
-  } else {
-    coverY += 24;
+    doc.setTextColor(PDF_COLORS.muted);
+    coverY += coverSubtitleGap;
+    for (const line of subtitleLines) {
+      coverY += coverSubtitleLineHeight;
+      pdfText(line, PAGE_MARGIN, coverY);
+    }
   }
 
+  // Les deux lignes du bas sont ancrées au bas de la page, pas à la suite du sous-titre : elles
+  // restent à la même hauteur quelle que soit la longueur du titre au-dessus.
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(120, 120, 120);
-  if (reportMeta.preparedBy) {
-    pdfText(`Préparé par : ${reportMeta.preparedBy}`, PAGE_MARGIN, coverY);
-    coverY += 18;
-  }
+  doc.setFontSize(10.5);
+  doc.setTextColor(PDF_COLORS.muted);
   const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  pdfText(`Date : ${today}`, PAGE_MARGIN, coverY);
+  if (reportMeta.preparedBy) {
+    pdfText(`Préparé par : ${reportMeta.preparedBy}`, PAGE_MARGIN, pageHeight - PAGE_MARGIN - 18);
+  }
+  pdfText(`Date : ${today}`, PAGE_MARGIN, pageHeight - PAGE_MARGIN);
 
   // --- GTM Canvas : les tâches groupées par phase --------------------------------------------------
   doc.addPage();
@@ -290,6 +375,9 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
         ['Total', formatMoney(totalBudget)],
       ],
       [220, 200],
+      // Une pastille de la couleur du canal devant chaque nom, la même que dans le donut juste en
+      // dessous. La ligne "Total" n'appartient à aucun canal, elle n'en a donc pas.
+      [...channelBudgets.map((b) => CHANNEL_COLORS[b.channel]), null],
     );
     await drawCapturedImage(captureElements.budgetDonut, 260);
   }
@@ -320,7 +408,14 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
     const globalScore = riskCriteria.reduce((total, c) => total + c.score * c.weight, 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.setTextColor(23, 23, 23);
+    // Même règle de lecture qu'à l'écran (voir RiskScorer.tsx et la barre de pilotage) : à partir du
+    // seuil de risque élevé, le chiffre passe en couleur d'alerte. En dessous, il garde le gris très
+    // foncé du reste du rapport.
+    if (globalScore >= RISK_HIGH_THRESHOLD) {
+      doc.setTextColor(PDF_COLORS.alert);
+    } else {
+      doc.setTextColor(23, 23, 23);
+    }
     pdfText(`Score de risque global : ${formatNumber(globalScore)} / 10`, PAGE_MARGIN, cursor.y);
     cursor.y += 28;
     drawTable(
@@ -366,6 +461,9 @@ export async function generateLaunchReportPdf(params: GenerateReportParams): Pro
         ],
       ],
       [110, 80, 80, 80, 110, 70],
+      // Mêmes pastilles que dans le tableau du Budget Allocator, et mêmes couleurs que les entonnoirs
+      // de l'image juste au-dessus. La ligne "Total" n'en a pas.
+      [...funnelRows.map((row) => CHANNEL_COLORS[row.channel]), null],
     );
   }
 

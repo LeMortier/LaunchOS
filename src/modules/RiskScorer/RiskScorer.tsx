@@ -3,7 +3,7 @@
 // Le score global affiché est la moyenne pondérée des 10 critères, animée pour bien voir quand ça bouge.
 import { useEffect, useMemo } from 'react';
 import { useLaunchStore } from '../../store/useLaunchStore';
-import type { RiskCriterion } from '../../store/types';
+import { RISK_HIGH_THRESHOLD, RISK_MEDIUM_THRESHOLD, type RiskCriterion } from '../../store/types';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { formatNumber } from '../../store/formatters';
 import { RISK_SCORE_MAX, RISK_SCORE_MIN, RISK_WEIGHT_MIN } from '../../store/numberBounds';
@@ -66,8 +66,18 @@ export default function RiskScorer() {
   // haut de l'app, pour que le risque se lise pareil partout dans LaunchOS :
   // en dessous de 4 rien à signaler (couleur neutre), entre 4 et 7 ça mérite attention (ambre),
   // à partir de 7 c'est un risque élevé (rose/rouge d'alerte). La barre en dessous reprend les mêmes 3 niveaux.
-  const scoreColorClass = globalScore >= 7 ? 'text-alert' : globalScore >= 4 ? 'text-accent' : 'text-ink';
-  const barColorClass = globalScore >= 7 ? 'bg-alert' : globalScore >= 4 ? 'bg-accent' : 'bg-muted';
+  const scoreColorClass =
+    globalScore >= RISK_HIGH_THRESHOLD
+      ? 'text-alert'
+      : globalScore >= RISK_MEDIUM_THRESHOLD
+        ? 'text-accent'
+        : 'text-ink';
+  const barColorClass =
+    globalScore >= RISK_HIGH_THRESHOLD
+      ? 'bg-alert'
+      : globalScore >= RISK_MEDIUM_THRESHOLD
+        ? 'bg-accent'
+        : 'bg-muted';
 
   // Le total des poids doit valoir 1 pour que le score global reste vraiment sur une échelle de 0 à
   // 10 (voir le calcul de globalScore plus haut : somme de score x weight). On le recalcule à chaque

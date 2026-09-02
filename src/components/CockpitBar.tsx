@@ -6,7 +6,7 @@
 // LIRE (aucune action, aucune écriture), donc il ne peut jamais désynchroniser un module.
 import { useMemo } from 'react';
 import { useLaunchStore } from '../store/useLaunchStore';
-import { GTM_PHASES } from '../store/types';
+import { GTM_PHASES, RISK_HIGH_THRESHOLD, RISK_MEDIUM_THRESHOLD } from '../store/types';
 import { formatMoney, formatNumber } from '../store/formatters';
 import { computeFunnelRows, computeFunnelTotals } from '../modules/SankeyFunnel/funnelMath';
 
@@ -40,7 +40,13 @@ export function CockpitBar() {
   // Couleur du score de risque : neutre si c'est bas (rien à signaler), ambre si ça mérite attention,
   // rouge/rose (alerte) si c'est franchement élevé. Les seuils reprennent ceux du module Risk Scorer.
   const riskValueClass =
-    riskScore === null ? 'text-ink' : riskScore >= 7 ? 'text-alert' : riskScore >= 4 ? 'text-accent' : 'text-ink';
+    riskScore === null
+      ? 'text-ink'
+      : riskScore >= RISK_HIGH_THRESHOLD
+        ? 'text-alert'
+        : riskScore >= RISK_MEDIUM_THRESHOLD
+          ? 'text-accent'
+          : 'text-ink';
 
   return (
     <div className="sticky top-0 z-10 mb-8 rounded-lg border border-border bg-surface px-6 py-4">

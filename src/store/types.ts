@@ -68,6 +68,14 @@ export interface RiskCriterion {
   weight: number; // importance du critère dans le score final, entre 0 et 1 (la somme des poids doit faire ~1)
 }
 
+// Le barème de lecture du score de risque global, partagé par le module Risk Scorer, la barre de
+// pilotage en haut de l'écran et le rapport PDF : à partir de 7 le risque est élevé (couleur
+// d'alerte), à partir de 4 il mérite attention (ambre), en dessous il n'y a rien à signaler.
+// Centralisé ici, comme les couleurs de canal plus haut, pour que ces 3 endroits basculent exactement
+// au même chiffre et qu'un changement de barème ne se fasse qu'à un seul endroit.
+export const RISK_HIGH_THRESHOLD = 7;
+export const RISK_MEDIUM_THRESHOLD = 4;
+
 // Les hypothèses de conversion et de ROAS (retour sur les dépenses publicitaires) pour un canal.
 // C'est ce qui permet au Sankey Funnel de transformer un budget en entonnoir de conversion.
 export interface ChannelFunnelConfig {
