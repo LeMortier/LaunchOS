@@ -4,7 +4,13 @@
 import { useMemo, useState } from 'react';
 import { CsvImportButton } from '../../components/CsvImportButton';
 import { useLaunchStore } from '../../store/useLaunchStore';
-import { GTM_PHASES, GTM_PHASE_LABELS, type GTMPhaseKey, type GTMTask } from '../../store/types';
+import {
+  GTM_PHASES,
+  GTM_PHASE_COLORS,
+  GTM_PHASE_LABELS,
+  type GTMPhaseKey,
+  type GTMTask,
+} from '../../store/types';
 import {
   clampToRange,
   GTM_DURATION_MAX,
@@ -87,6 +93,36 @@ export default function GTMCanvas() {
     }
     return grouped;
   }, [gtmTasks]);
+
+  // Le petit résumé affiché en haut de chaque colonne : combien de tâches, combien de jours de
+  // travail au total, et quelle part ça pèse par rapport aux 3 phases réunies.
+  // Attention à ne pas mal lire cette part : elle ne dit PAS combien de temps dure la phase dans le
+  // calendrier (les tâches se chevauchent, deux tâches de 5 jours en parallèle ne font pas 10 jours
+  // de calendrier), elle dit quelle portion du travail prévu tombe dans cette phase.
+  // On repart de tasksByPhase, déjà groupé juste au-dessus, plutôt que de reparcourir gtmTasks une
+  // deuxième fois. Et comme tasksByPhase se recalcule dès que les tâches du store changent, ce résumé
+  // suit tout seul le moindre ajout, la moindre modification et la moindre suppression.
+  const phaseSummary = useMemo(() => {
+    const vide = () => ({ count: 0, days: 0, share: 0 });
+    const summary: Record<GTMPhaseKey, { count: number; days: number; share: number }> = {
+      'pre-launch': vide(),
+      launch: vide(),
+      'post-launch': vide(),
+    };
+    for (const key of GTM_PHASES) {
+      summary[key].count = tasksByPhase[key].length;
+      summary[key].days = tasksByPhase[key].reduce((total, task) => total + task.durationDays, 0);
+    }
+    // Le total sert de dénominateur à la barre. Sans tâche il vaut 0 : le garde-fou évite une
+    // division par zéro, qui donnerait une largeur "NaN%" et une barre qui ne s'affiche pas.
+    // On arrondit au dixième de pour cent, ça suffit largement pour une barre de quelques pixels et
+    // ça évite d'écrire un nombre à quinze décimales dans le style de l'élément.
+    const totalDays = GTM_PHASES.reduce((total, key) => total + summary[key].days, 0);
+    for (const key of GTM_PHASES) {
+      summary[key].share = totalDays > 0 ? Math.round((summary[key].days / totalDays) * 1000) / 10 : 0;
+    }
+    return summary;
+  }, [tasksByPhase]);
 
   // Envoie la tâche du formulaire dans le store. On génère un id unique avec crypto.randomUUID
   // (une fonction du navigateur qui fabrique un identifiant aléatoire quasi-impossible à dupliquer).
@@ -264,11 +300,38 @@ export default function GTMCanvas() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {GTM_PHASES.map((phaseKey) => (
           <div key={phaseKey} className="bg-surface border border-border rounded-lg p-6">
-            {/* Titre de phase : juste un repère visuel net, pas d'ambre ici (ce n'est ni une
-                action ni LE chiffre clé du module). */}
-            <h3 className="mb-3 font-display text-sm font-semibold text-ink">
-              {GTM_PHASE_LABELS[phaseKey]}
-            </h3>
+            {/* Titre de phase, précédé du point de couleur de cette phase (la même couleur que la
+                bordure gauche de ses cartes, plus bas). Pas d'ambre ici : ce n'est ni une action ni
+                LE chiffre clé du module, la couleur sert juste à repérer la phase d'un coup d'oeil. */}
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: GTM_PHASE_COLORS[phaseKey] }}
+              />
+              <h3 className="font-display text-sm font-semibold text-ink">
+                {GTM_PHASE_LABELS[phaseKey]}
+              </h3>
+            </div>
+
+            {/* Résumé de la colonne : le compte et les jours en toutes lettres, puis la même chose en
+                barre juste en dessous. La barre n'ajoute aucune information, elle rend juste comparable
+                d'un coup d'oeil ce que les 3 chiffres disent déjà. Chiffres en mono/tabular-nums comme
+                partout ailleurs dans l'app. */}
+            <div className="font-mono tabular-nums text-xs text-muted">
+              {phaseSummary[phaseKey].count} tâche(s) · {phaseSummary[phaseKey].days} j
+            </div>
+            {/* La piste reprend bg-border, une couleur déjà de la palette. Seules la largeur (calculée)
+                et la couleur de phase passent par un style en ligne : une classe Tailwind ne peut
+                porter ni l'une ni l'autre. Même façon de faire que les points de canal du Sankey. */}
+            <div className="mt-1 mb-3 h-[3px] overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${phaseSummary[phaseKey].share}%`,
+                  backgroundColor: GTM_PHASE_COLORS[phaseKey],
+                }}
+              />
+            </div>
             {tasksByPhase[phaseKey].length === 0 ? (
               <p className="text-xs text-muted">
                 Ajoutez une tâche pour cette phase avec le formulaire ci-dessus.
@@ -339,7 +402,16 @@ export default function GTMCanvas() {
                       </form>
                     </li>
                   ) : (
-                    <li key={task.id} className="rounded border border-border bg-canvas p-2 text-sm">
+                    // La bordure gauche de 3px reprend la couleur de la phase, comme le point à
+                    // côté du titre de la colonne : on sait à quelle phase appartient une carte sans
+                    // avoir à remonter en haut de la colonne. La carte en cours de modification, elle,
+                    // garde sa bordure ambre : l'ambre y signale un état en cours, mélanger les deux
+                    // signaux sur la même carte brouillerait les deux.
+                    <li
+                      key={task.id}
+                      className="rounded border border-l-[3px] border-border bg-canvas p-2 text-sm"
+                      style={{ borderLeftColor: GTM_PHASE_COLORS[task.phase] }}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-ink">{task.title}</span>
                         <div className="flex shrink-0 items-center gap-2">

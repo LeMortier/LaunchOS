@@ -35,6 +35,21 @@ export const GTM_PHASE_LABELS: Record<GTMPhaseKey, string> = {
   'post-launch': 'Post-lancement',
 };
 
+// Une couleur par phase, sur le même principe que CHANNEL_COLORS plus haut : définie à un seul
+// endroit, pour qu'une phase ait toujours la même couleur partout où elle apparaît (le point à côté
+// du titre de colonne et la bordure gauche des cartes, dans le GTM Canvas).
+// Les 3 teintes sont dans la même famille, du bleu-vert au vert, avec la plus vive sur le lancement :
+// ça se lit comme une progression dans le temps, pas comme 3 étiquettes sans rapport entre elles.
+// Elles restent volontairement peu saturées : un repère de phase sert à se situer, ce n'est pas une
+// action, donc il doit rester derrière l'ambre dans la hiérarchie visuelle. La famille verte est
+// aussi la seule encore libre : l'ambre tient l'orange, et les 4 canaux tiennent le bleu vif, le rose
+// (qui est en plus la couleur d'alerte) et le violet.
+export const GTM_PHASE_COLORS: Record<GTMPhaseKey, string> = {
+  'pre-launch': '#4E7C8A', // bleu-vert sourd
+  launch: '#3FA08C', // vert d'eau
+  'post-launch': '#7FA98C', // vert-gris
+};
+
 // Une ligne du Budget Allocator : combien d'argent est mis sur tel canal.
 // C'est aussi le point de départ du Sankey Funnel : le budget par canal alimente le simulateur d'acquisition.
 export interface ChannelBudget {
