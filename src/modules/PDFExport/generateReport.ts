@@ -50,12 +50,14 @@ const PAGE_MARGIN = 48;
 // "NONE", "FAST", "MEDIUM" ou "SLOW"), et surtout pas le format passé en 2e position : celui-là vaut
 // déjà "PNG" et ne dit que comment lire la capture, pas comment la ranger dans le fichier.
 // Chaque valeur choisit un couple filtre PNG + niveau de zlib. Mesuré sur le scénario de démo, avec
-// des captures de graphiques (de grands aplats de couleur unie), taille du fichier et temps de
-// génération dans le navigateur : NONE 16,8 Mo en 1,26 s, FAST 287 Ko en 1,25 s, MEDIUM 330 Ko en
-// 1,28 s, SLOW 267 Ko en 2,06 s.
-// FAST est donc à la fois le plus rapide et presque le plus petit, et il ne coûte rien par rapport à
-// l'absence de compression. Les 20 Ko que SLOW ferait gagner ne valent pas ses 800 ms de calcul en
-// plus. La compression PNG est sans perte : l'image du PDF reste identique au pixel près.
+// des captures de graphiques (de grands aplats de couleur unie) : NONE donne 16,8 Mo, FAST 287 Ko,
+// MEDIUM 330 Ko et SLOW 267 Ko. Ces tailles-là sont fiables, on retombe sur les mêmes à l'octet près
+// d'un lancement à l'autre.
+// Le temps de génération, lui, bouge de plusieurs centaines de millisecondes d'un lancement à
+// l'autre, donc une seule chose en ressort vraiment : SLOW est nettement plus lent que les autres,
+// autour du double. D'où le choix de FAST, plus petit que MEDIUM et sans le surcoût de calcul de
+// SLOW, qui ne ferait gagner que 20 Ko.
+// La compression PNG est sans perte : l'image du PDF reste identique au pixel près.
 const IMAGE_COMPRESSION = 'FAST';
 
 // Les couleurs de la palette du projet, réécrites ici en hexadécimal parce que jsPDF ne connaît ni les
