@@ -115,7 +115,16 @@ export function FunnelCharts({ rows, variant = 'dark' }: FunnelChartsProps) {
   // (sombre), la grille reste responsive comme avant.
   const gridColsClass = isLight ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
 
-  const reduceMotion = prefersReducedMotion();
+  // La copie hors écran qui sert de photo pour le PDF ne doit JAMAIS s'animer, et ce n'est pas une
+  // question de goût. Pendant son animation d'entrée, recharts n'affiche pas du tout les étiquettes
+  // des étages (dans son code : showLabels vaut !isAnimating), il ne dessine que les formes. Or cette
+  // animation repart à zéro dès que le tableau de données change d'identité, et c'est exactement ce
+  // qui se passe au clic sur "Générer le PDF" : le clic met à jour un state de PDFExport, qui
+  // recalcule funnelRows, donc de nouvelles données, donc une animation qui redémarre pile au moment
+  // où html-to-image prend la photo. Résultat mesuré : les 12 étiquettes disparaissent du DOM hors
+  // écran pendant environ 2 secondes, et le PDF ne recevait que des entonnoirs muets.
+  // À l'écran l'animation reste active, elle sert à voir le funnel se construire.
+  const animate = !isLight && !prefersReducedMotion();
 
   // Tant qu'aucun canal n'a de clic (aucun budget ni coût par clic renseigné nulle part), il n'y a
   // rien à dessiner du tout : un seul message centré à la place de toute la grille, plutôt que 4
@@ -154,7 +163,7 @@ export function FunnelCharts({ rows, variant = 'dark' }: FunnelChartsProps) {
               Aucune donnée pour ce canal.
             </div>
           ) : (
-            <FunnelForChannel channel={row.channel} row={row} labelFill={labelFill} reduceMotion={reduceMotion} />
+            <FunnelForChannel channel={row.channel} row={row} labelFill={labelFill} animate={animate} />
           )}
         </div>
       ))}
@@ -169,12 +178,13 @@ function FunnelForChannel({
   channel,
   row,
   labelFill,
-  reduceMotion,
+  animate,
 }: {
   channel: Channel;
   row: Pick<FunnelRow, 'clicks' | 'leads' | 'customers'>;
   labelFill: string;
-  reduceMotion: boolean;
+  /** false pour la version imprimable : voir l'explication sur "animate" dans FunnelCharts. */
+  animate: boolean;
 }) {
   const data = FUNNEL_STAGES.map((stage) => {
     const value = row[stage.key];
@@ -205,7 +215,7 @@ function FunnelForChannel({
         {/* Le survol doit afficher la vraie valeur (value), pas sizeValue qui pilote la hauteur du
             segment : on va la rechercher dans item.payload, l'objet de donnée complet de ce point. */}
         <Tooltip formatter={(_value, _name, item) => formatCount(Number(item.payload.value))} />
-        <Funnel dataKey="sizeValue" data={data} isAnimationActive={!reduceMotion}>
+        <Funnel dataKey="sizeValue" data={data} isAnimationActive={animate}>
           {/* content={FunnelStageLabel} : voir le commentaire sur cette fonction plus haut dans le
               fichier, elle explique pourquoi on ne laisse pas recharts positionner cette étiquette
               lui-même. */}
