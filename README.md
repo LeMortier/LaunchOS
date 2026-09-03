@@ -16,7 +16,7 @@ LaunchOS rassemble ces cinq dimensions dans un outil unique. Chaque saisie se r�
 
 **Budget Allocator.** La répartition de l'enveloppe entre les canaux d'acquisition, avec un code couleur repris dans tous les autres modules.
 
-**Funnel Simulator.** La projection du tunnel de conversion, représentée par un diagramme de Sankey. C'est ce module qui calcule le ROAS à partir du budget alloué et des taux de conversion saisis.
+**Funnel d'acquisition & ROAS.** La projection du tunnel de conversion, un entonnoir par canal. C'est ce module qui calcule le ROAS à partir du budget alloué et des taux de conversion saisis.
 
 **KPI Tracker.** Le suivi des indicateurs semaine après semaine, avec import CSV pour repartir d'un export existant.
 
@@ -40,7 +40,7 @@ Elle est en lecture seule. Elle recalcule ses valeurs à partir du même magasin
 - Vite pour le build et le serveur de développement
 - Tailwind CSS 4 pour les styles
 - Zustand pour le magasin de données partagé entre les modules
-- Recharts pour les graphiques, d3-sankey pour le diagramme du funnel
+- Recharts pour les graphiques, dont les entonnoirs du funnel
 - PapaParse pour la lecture des fichiers CSV
 - jsPDF et html-to-image pour la génération du rapport
 - Oxlint pour le lint
@@ -94,6 +94,6 @@ src/
 
 ## Contexte
 
-Projet de fin de Bachelor réalisé dans le cadre du MSc Business and Technology Management à Epitech Digital School.
+Projet de fin de cycle Bachelor, dans le cursus MSc Business & Technology Management à Epitech Digital School.
 
 Conception, spécification et développement : Matthieu Mortier.
