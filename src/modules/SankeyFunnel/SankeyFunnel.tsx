@@ -133,7 +133,7 @@ export default function SankeyFunnel() {
   };
 
   return (
-    <div className="flex flex-col gap-8 p-6">
+    <div className="flex flex-col gap-8">
       <div>
         <h2 className="font-display text-3xl font-semibold tracking-tight text-ink">Funnel d'acquisition & ROAS</h2>
         <p className="text-sm text-muted mt-2">
